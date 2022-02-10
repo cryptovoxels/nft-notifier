@@ -71,6 +71,7 @@ export default class WebhookManager {
   addWallet = async (wallet:string)=>{
     if(!this.webhook_id){
       await this.create()
+      return
     }
 
     if(!this.webhook_id){
