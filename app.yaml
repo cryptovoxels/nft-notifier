@@ -20,7 +20,7 @@ services:
     routes:
       - path: /
     github:
-      repo: cryptovoxels/app_template # change this
+      repo: cryptovoxels/nft-notifier # change this
       branch: main
       deploy_on_push: true
     build_command: npm run build
