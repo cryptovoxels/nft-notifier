@@ -10,7 +10,7 @@ import { ClientManager } from './ClientManager'
 import { createRateLimiter } from './createRateLimiter'
 import { alchemyNotifyResponse, isValidSignature } from './lib/lib'
 
-
+const bodyParser = require("body-parser")
 // @todo make sure the 'app_template' below is changed to the apps name so we can find the logs in LogDNA
 const log = createLogger('nft-notifier')
 
@@ -52,6 +52,7 @@ const corsOptions: cors.CorsOptions = {
 
 app.use(cors(corsOptions))
 app.use(createWWWLogger('nft-notifier'))
+app.use(bodyParser.json())
 
 app.get('/', (req: express.Request, res: express.Response) => {
   res.status(200).end(`welcome to ${name} ${version}`)
@@ -65,6 +66,7 @@ app.get(HEALTHCHECK_URL, (req: express.Request, res: express.Response) => {
 })
 
 app.post('/hook',async (req: express.Request, res: express.Response) => {
+  console.log(req)
   console.log(req.body)
   if(!isValidSignature(req)){
     res.status(400).send('Nothing to see here')
@@ -83,7 +85,7 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
 
   const body = req.body as alchemyNotifyResponse
 
-  res.status(200).send('ok') // reply quickly
+  res.status(200).end() // reply quickly
 
   if(!body.activity){
     // we currently dont care about dropped tx or mined tx;
