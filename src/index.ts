@@ -107,7 +107,7 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
     const client = clientManager.clients.find((c)=>c.wallet==from.toLowerCase() || c.wallet==to.toLowerCase())
     if(client){
       const msg = {from,to,contract:activity.rawContract.address}
-      client?.sendNotify(msg)
+      client.sendNotify(msg)
     }
   }
 })

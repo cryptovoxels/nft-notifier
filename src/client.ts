@@ -1,9 +1,6 @@
 import * as jwt from 'jsonwebtoken'
-import assert from 'assert'
 import {createLogger } from '@cryptovoxels/app-basics'
-
 import { ClientChannel } from './lib/ClientChannel'
-
 import { Policy } from 'cockatiel'
 import { ClientManager } from './ClientManager'
 import { LoginMessage, messages, MessageSubscribed, MessageType, PingMessage, PongMessage, throwUnhandledCase } from './lib/lib'
