@@ -96,11 +96,24 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
 
   // handle the webhook content
   for (const activity of body.activity){
+    const get32AddressFrom64 = (address:string)=>{
+      return '0x' + address.substring('0x000000000000000000000000'.length,address.length)
+    }
     // Here we need to convert the Address from Alchemy which looks like 
     //"0x0000000000000000000000003e4f2bae78b177b01d209e167f1cbc8839dbccf7"
     // into something like this:
     //"0x3e4f2bae78b177b01d209e167f1cbc8839dbccf7"
-    clientManager.clients.find((c)=>c.wallet==activity.fromAddress.toLowerCase() || c.wallet==activity.toAddress.toLowerCase())
+
+    const from = get32AddressFrom64(activity.fromAddress)
+    const to = get32AddressFrom64(activity.toAddress)
+
+    console.log(from)
+    console.log(to)
+    const client = clientManager.clients.find((c)=>c.wallet==from.toLowerCase() || c.wallet==to.toLowerCase())
+    if(client){
+      const msg = {from,to,contract:activity.rawContract.address}
+      client?.sendNotify(msg)
+    }
   }
 })
 

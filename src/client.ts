@@ -60,8 +60,8 @@ export class Client {
     }
   }
 
-  CreateSubscription(){
-
+  sendNotify = (msg:{from:string,to:string,contract:string})=>{
+    this.send({type:'notify',...msg})
   }
 
   ageInSec(): number {
