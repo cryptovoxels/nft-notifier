@@ -65,6 +65,7 @@ app.get(HEALTHCHECK_URL, (req: express.Request, res: express.Response) => {
 })
 
 app.post('/hook',async (req: express.Request, res: express.Response) => {
+  console.log(req.body)
   if(!isValidSignature(req)){
     res.status(400).send('Nothing to see here')
     return
