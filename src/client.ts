@@ -5,7 +5,6 @@ import { Policy } from 'cockatiel'
 import { ClientManager } from './ClientManager'
 import { LoginMessage, messages, MessageSubscribed, MessageType, PingMessage, PongMessage, throwUnhandledCase } from './lib/lib'
 
-const he = require('he')
 export const CLIENT_INACTIVE_TIMEOUT_MS = 60000 * 5
 
 const log= createLogger('nft-notifier-client')
