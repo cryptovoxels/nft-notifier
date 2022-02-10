@@ -4,6 +4,7 @@ import { Client } from './Client'
 import { ClientChannel } from './lib/ClientChannel'
 import { RateLimiter } from './lib/RateLimiter'
 import {createLogger } from '@cryptovoxels/app-basics'
+import WebhookManager from './WebHookManager'
 const log =createLogger()
 
 export type AddClientResult =
@@ -18,11 +19,12 @@ export type AddClientResult =
 
 export class ClientManager {
   clients: Client[] = []
-
+  webhookManager: WebhookManager
   constructor(
     private readonly jwtSecret: string,
     private readonly loginRateLimiter: RateLimiter,
   ) {
+    this.webhookManager = new WebhookManager(this)
   }
 
   async addClient(channel: ClientChannel, ipAddr: string): Promise<AddClientResult> {

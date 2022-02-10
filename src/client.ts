@@ -87,6 +87,7 @@ export class Client {
   }
 
   private unsubscribe (){
+    this.clientManager.webhookManager.removeWallet(this.wallet)
     this.clientManager.removeClient(this)
   }
 
@@ -161,6 +162,8 @@ export class Client {
     const msg: MessageSubscribed = {
       type: 'subscribed'
     }
+
+    this.clientManager.webhookManager.addWallet(this.wallet)
 
     this.send(msg)
   }

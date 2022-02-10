@@ -1,5 +1,5 @@
 # spec at https://docs.digitalocean.com/products/app-platform/references/app-specification-reference/
-name: nft-modifier # change this
+name: nft-notifier # change this
 region: sfo
 
 # remove domains section if not using a service

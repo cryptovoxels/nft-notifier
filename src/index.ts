@@ -2,7 +2,7 @@ require('dotenv').config()
 import cors from 'cors'
 import express from 'express'
 import WebSocket, { Server } from 'ws'
-import { Connect, server,serverListen, app, HEALTHCHECK_URL, createLogger, createWWWLogger } from '@cryptovoxels/app-basics'
+import { server,serverListen, app, HEALTHCHECK_URL, createLogger, createWWWLogger } from '@cryptovoxels/app-basics'
 import { name, version } from '../package.json'
 import { IncomingMessage } from 'http'
 import { createWebSocketClientChannel } from './createWebSocketClientChannel'
@@ -10,9 +10,9 @@ import { ClientManager } from './ClientManager'
 import { createRateLimiter } from './createRateLimiter'
 import { alchemyNotifyResponse, isValidSignature } from './lib/lib'
 
-const { query } = Connect()
+
 // @todo make sure the 'app_template' below is changed to the apps name so we can find the logs in LogDNA
-const log = createLogger('app_template')
+const log = createLogger('nft-notifier')
 
 const jwtSecret = process.env.JWT_SECRET
 if (!jwtSecret) {
@@ -52,11 +52,6 @@ const corsOptions: cors.CorsOptions = {
 
 app.use(cors(corsOptions))
 app.use(createWWWLogger('nft-notifier'))
-
-const sql = `select pid from pg_stat_activity limit 1;`
-query(sql).then((r: any) => {
-  log.info('web connected to database')
-})
 
 app.get('/', (req: express.Request, res: express.Response) => {
   res.status(200).end(`welcome to ${name} ${version}`)

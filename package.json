@@ -1,6 +1,6 @@
 {
-  "name": "app",
-  "version": "0.0.1",
+  "name": "nft-notifier",
+  "version": "0.1.0",
   "private": true,
   "engines": {
     "node": ">=16"
@@ -30,6 +30,7 @@
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "dotenv": "^8.6.0",
+    "he": "^1.2.0",
     "jsonwebtoken": "^8.5.1",
     "rate-limiter-flexible": "^2.3.6",
     "ws": "^8.5.0"
