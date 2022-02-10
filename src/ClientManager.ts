@@ -1,6 +1,6 @@
 
 
-import { Client } from './Client'
+import { Client } from './client'
 import { ClientChannel } from './lib/ClientChannel'
 import { RateLimiter } from './lib/RateLimiter'
 import {createLogger } from '@cryptovoxels/app-basics'
