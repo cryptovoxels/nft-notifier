@@ -1,5 +1,5 @@
 import { ClientManager } from "./ClientManager"
-
+import fetch from 'node-fetch'
 const app_id = 'ltyb827zi6bnrzg2'
 const AUTH_KEY = process.env.ALCHEMY_TOKEN
 
