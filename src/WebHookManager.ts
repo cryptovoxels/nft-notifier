@@ -34,7 +34,7 @@ export default class WebhookManager {
       return false
     }
     let r = await p.json() as {data:{id:number,app_id:string,is_active:boolean}}
-    console.log(r.data)
+    console.log(r)
     if(r.data && r.data.is_active){
       this.webhook_id = r.data.id
       this.is_active = r.data.is_active
