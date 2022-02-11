@@ -1,5 +1,5 @@
 import express from 'express'
-import crypto from 'crypto'
+const crypto = require('crypto')
 
 export function throwUnhandledCase(n: never): never {
   throw new Error('Unhandled case: ' + JSON.stringify(n))
