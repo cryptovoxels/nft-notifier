@@ -19,8 +19,7 @@ export default class WebhookManager {
     console.log(this.clientManager.clients.map((c)=>c.wallet))
     const body = {app_id,
       webhook_type:4,
-      webhook_url:`https://notifier.crvox.com/hook`,
-      addresses:this.clientManager.clients.map((c)=>c.wallet)
+      webhook_url:`https://notifier.crvox.com/hook`
     }
 
     let p 
@@ -72,7 +71,6 @@ export default class WebhookManager {
   addWallet = async (wallet:string)=>{
     if(!this.webhook_id){
       await this.create()
-      return
     }
 
     if(!this.webhook_id){
@@ -81,7 +79,7 @@ export default class WebhookManager {
     }
     const body = {
       webhook_id:this.webhook_id,
-      addresses_to_add:wallet
+      addresses_to_add:[wallet]
     }
 
     let p 
@@ -110,7 +108,7 @@ export default class WebhookManager {
 
     const body = {
       webhook_id:this.webhook_id,
-      addresses_to_remove:wallet
+      addresses_to_remove:[wallet]
     }
 
     let p 
