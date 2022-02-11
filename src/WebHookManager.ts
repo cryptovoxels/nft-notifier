@@ -34,7 +34,7 @@ export default class WebhookManager {
       return false
     }
     let r = await p.json() as {data:{id:number,app_id:string,is_active:boolean}}
-
+    console.log(r.data)
     if(r.data && r.data.is_active){
       this.webhook_id = r.data.id
       this.is_active = r.data.is_active
@@ -75,7 +75,8 @@ export default class WebhookManager {
     }
 
     if(!this.webhook_id){
-      throw Error('addWallet: No webhook_id found')
+      console.error('addWallet: No webhook_id found')
+      return
     }
     const body = {
       webhook_id:this.webhook_id,
@@ -100,6 +101,12 @@ export default class WebhookManager {
   }
 
   removeWallet = async (wallet:string)=>{
+
+    if(!this.webhook_id){
+      console.error('removeWallet: No webhook_id found')
+      return
+    }
+
     const body = {
       webhook_id:this.webhook_id,
       addresses_to_remove:wallet

@@ -72,7 +72,7 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
     return
   }
 
-  if(!('app' in req.body) && !('activity' in req.body)){
+  if(!('app' in req.body)){
     res.status(200).send('Nothing to see here')
     return
   }
