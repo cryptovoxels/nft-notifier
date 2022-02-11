@@ -17,7 +17,8 @@ export default class WebhookManager {
 
   create = async ()=>{
     console.log(this.clientManager.clients.map((c)=>c.wallet))
-    const body = {app_id,
+    const body = {
+      app_id:"ltyb827zi6bnrzg2",
       webhook_type:4,
       webhook_url:`https://notifier.crvox.com/hook`
     }
