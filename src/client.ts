@@ -158,7 +158,7 @@ export class Client {
     const msg: MessageSubscribed = {
       type: 'subscribed'
     }
-
+    console.log('add wallet')
     this.clientManager.webhookManager.addWallet(this.wallet)
 
     this.send(msg)
