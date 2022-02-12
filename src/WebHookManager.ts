@@ -19,7 +19,7 @@ export default class WebhookManager {
   getRemoteHooks = async ()=>{
     let p 
     try{
-      p = await fetch(`https://dashboard.alchemyapi.io/api/create-webhook`,{method:'GET',headers})
+      p = await fetch(`https://dashboard.alchemyapi.io/api/team-webhooks`,{method:'GET',headers})
     }catch(e){
       console.error(e)
       return 
@@ -205,7 +205,9 @@ export default class WebhookManager {
   }
 
   static removeHook = async (hook:{id:number})=>{
-    
+    if(!hook){
+      return
+    }
     let body = JSON.stringify({webhook_id:hook.id})
     let p 
     try{
