@@ -61,6 +61,10 @@ export class ClientManager {
     }
   }
 
+  clientHasUniqueWallet(c:Client){
+    return this.clients.filter((client)=>client.wallet.toLowerCase()==c.wallet.toLowerCase()).length<=1
+  }
+
   removeInactiveClients() {
     log.debug('checking for inactive clients')
     this.clients.forEach((client) => {

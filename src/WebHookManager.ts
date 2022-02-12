@@ -1,54 +1,119 @@
 import { ClientManager } from "./ClientManager"
-
+import {createLogger } from '@cryptovoxels/app-basics'
 const fetch = require('node-fetch')
 const app_id = 'ltyb827zi6bnrzg2'
 const AUTH_KEY = process.env.ALCHEMY_TOKEN
+import { Policy } from 'cockatiel'
+
+const log= createLogger('HOOKManager')
+// Create a retry policy that'll retry whatever function we execute two more times with a randomized exponential backoff if it throws
+const retry = Policy.handleAll().retry().attempts(2).exponential()
+retry.onRetry((reason) => log.debug(`retrying a function call, delaying ${reason.delay.toFixed(1)}ms`))
 
 const headers = {"X-Alchemy-Token":`${AUTH_KEY}`}
-
+type hook = {id:number,webhook_url:string,app_id:string,is_active:boolean,addresses?:string[]}
 export default class WebhookManager {
 
   webhook_id:number|undefined
   clientManager:ClientManager
   is_active:boolean = false
+  queue:string[] = []
   constructor(clientManager:ClientManager){
     this.clientManager = clientManager
-    this.getRemoteHooks()
+    this.init()
   }
 
-  getRemoteHooks = async ()=>{
+  async init(){
+    await retry.execute(async () =>await this.getRemoteHook())
+    if(!this.webhook_id){
+      await this.create()
+    }
+
+  }
+
+  getRemoteHook = async ()=>{
     let p 
     try{
       p = await fetch(`https://dashboard.alchemyapi.io/api/team-webhooks`,{method:'GET',headers})
     }catch(e){
-      console.error(e)
-      return 
+      log.error(e)
+      return null
     }
     
     if(!p){
-      return 
+      return null
     }
-    let r = await p.json() as {data:{id:number,webhook_url:string,app_id:string,is_active:boolean}[]}
-
-    if(!r.data || !r.data?.length){
-      return 
+    let r 
+    try{
+      r= await p.json() as {data:hook[]}
+    }catch{
+      throw Error('bad JSON')
     }
 
-    let hooks = r.data.filter((d)=>d.webhook_url==`https://notifier.crvox.com/hook`)
+    if(!r?.data || !r?.data?.length){
+      return null
+    }
+
+    let hooks = r.data.filter((d)=>d.webhook_url===`https://notifier.crvox.com/hook`)
     if(!hooks.length){
-      return 
+      return null
     }
-    
-    for(const [index,hook] of hooks.entries()){
-      if(index==(hooks.length-1)){
-        //keep one hook and use it
-        this.webhook_id == hook.id
+
+    log.info(`Found ${hooks.length} hooks;`)
+    // find hook with most addresses in it;
+    let hookWithMostAddresses:hook|null = null
+
+    if(hooks.length==1){
+      // Only one hook found, use that one;
+      hookWithMostAddresses = hooks[0]
+      this.setWebHookId(hookWithMostAddresses)
+      return hookWithMostAddresses
+    }
+
+    // More hooks were made on Alchemy; we save the one with the most wallets saved on it;
+    for(const hook of hooks){
+      if(!hook.addresses){
+        continue
+      }
+      if(!hookWithMostAddresses && hook.addresses){
+        // no "hookWithMostAddresses", save the first one if it has wallets in it;
+        hookWithMostAddresses =hook
+        continue
+      }
+      if(hook.addresses.length>(hookWithMostAddresses?.addresses?.length||0)){
+        hookWithMostAddresses =hook
+      }
+    }
+
+    if(hookWithMostAddresses){
+      // use that hook
+      this.setWebHookId(hookWithMostAddresses)
+    }
+    // Delete all remote hooks but the one with the most addresses in it
+    for(const hook of hooks){
+      if(hookWithMostAddresses?.id==hook.id){
+        //keep best hook and use it
         continue
       }else{
         WebhookManager.removeHook(hook)
       }
 
+    }
 
+    return hookWithMostAddresses
+  }
+
+  setWebHookId = async (hook:hook)=>{
+    this.webhook_id = hook.id
+    this.is_active = !!hook.is_active
+    log.info(`Current webhook: ${hook.id}`)
+    // on set webhook; go through the queue of addresses
+    let a = Array.from(this.queue)
+    let p = await this.addWallets(a)
+    if(!p){
+      this.queue = a
+    }else{
+      this.queue = []
     }
   }
 
@@ -57,7 +122,7 @@ export default class WebhookManager {
       return
     }
     const body = JSON.stringify({
-      app_id:"ltyb827zi6bnrzg2",
+      app_id,
       webhook_type:4,
       webhook_url:`https://notifier.crvox.com/hook`,
       addresses:this.clientManager.clients.map((c)=>c.wallet)
@@ -67,7 +132,7 @@ export default class WebhookManager {
     try{
       p = await fetch(`https://dashboard.alchemyapi.io/api/create-webhook`,{method:'POST',headers,body})
     }catch(e){
-      console.error(e)
+      log.error(e)
       return false
     }
     
@@ -77,15 +142,14 @@ export default class WebhookManager {
 
     let r 
     try{
-      r = await p.json() as {data:{id:number,app_id:string,is_active:boolean}}
+      r = await p.json() as {data:hook}
     }catch{
       return false
     }
 
     if(r.data && r.data.is_active){
-      this.webhook_id = r.data.id
-      this.is_active = r.data.is_active
-      console.log(`webhook ${this.webhook_id} created`)
+      log.info(`Webhook ${r.data.id} created`)
+      await this.setWebHookId(r.data)
       return true
     }
     return false
@@ -116,19 +180,24 @@ export default class WebhookManager {
     return false
   }
 
-  addWallet = async (wallet:string)=>{
-    if(!this.webhook_id){
-      await this.create()
-      return
+  addWallets = async (wallets:string|string[])=>{
+    let walletsToAdd = wallets
+    if(typeof wallets =='string'){
+      walletsToAdd = [wallets]
     }
 
     if(!this.webhook_id){
-      console.error('addWallet: No webhook_id found')
+      this.queue = [...walletsToAdd,...this.queue]
+      log.warn(`addWallet: no webhook_id; saving to queue`)
+      return false
+    }
+    if(!walletsToAdd.length){
       return
     }
     const body = JSON.stringify({
       webhook_id:this.webhook_id,
-      addresses_to_add:[wallet]
+      addresses_to_add:[...walletsToAdd],
+      addresses_to_remove:[]
     })
 
     let p 
@@ -142,7 +211,7 @@ export default class WebhookManager {
     let r = await p.json()
 
     if(r){
-      console.log(`wallet ${wallet} added`)
+      log.info(`wallet ${JSON.stringify(wallets)} added`)
       return true
     }
     return false
@@ -152,12 +221,13 @@ export default class WebhookManager {
   removeWallet = async (wallet:string)=>{
 
     if(!this.webhook_id){
-      console.error('removeWallet: No webhook_id found')
+      log.error('removeWallet: No webhook_id found')
       return
     }
 
     const body = JSON.stringify({
       webhook_id:this.webhook_id,
+      addresses_to_add:[],
       addresses_to_remove:[wallet]
     })
 
@@ -165,14 +235,13 @@ export default class WebhookManager {
     try{
       p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook-addresses`,{method:'PATCH',headers,body})
     }catch(e){
-      console.error(e)
+      log.error(e)
       return false
     }
-
     let r = await p.json()
 
     if(r){
-      console.log(`wallet ${wallet} removed`)
+      log.info(`wallet ${wallet} removed`)
       return true
     }
     return false
@@ -190,7 +259,7 @@ export default class WebhookManager {
     try{
       p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook`,{method:'PUT',headers,body})
     }catch(e){
-      console.error(e)
+      log.error(e)
       return false
     }
     
@@ -206,25 +275,26 @@ export default class WebhookManager {
     return false
   }
 
-  static removeHook = async (hook:{id:number})=>{
+  static removeHook = async (hook:hook)=>{
     if(!hook){
       return
     }
-    let body = JSON.stringify({webhook_id:hook.id})
+
     let p 
     try{
-      p = await fetch(`https://dashboard.alchemyapi.io/api/delete-webhook`,{method:'DELETE',headers,body})
+      p = await fetch(`https://dashboard.alchemyapi.io/api/delete-webhook?webhook_id=${hook.id}`,{method:'DELETE',headers})
     }catch(e){
-      console.error(e)
+      log.error(e)
       return false
     }
     
     if(!p){
       return false
     }
-    let r = await p.json() as {}
+    let r = await p.json() as {} 
 
     if(r){
+      log.info(`removed Hook ${hook.id}`)
       return true
     }
     return false

@@ -83,7 +83,10 @@ export class Client {
   }
 
   private unsubscribe (){
-    this.clientManager.webhookManager.removeWallet(this.wallet)
+    if(this.clientManager.clientHasUniqueWallet(this)){
+      // don't remove wallet from webhook if wallet is used at multiple places
+      this.clientManager.webhookManager.removeWallet(this.wallet)
+    }
     this.clientManager.removeClient(this)
   }
 
@@ -102,7 +105,7 @@ export class Client {
   /** returns true if the message should be broadcast **/
   private processMessage(data: messages): void {
     const msg = data
-    log.debug(`received ${msg.type} message ${JSON.stringify(data).length}b`, this.whois())
+    // log.debug(`received ${msg.type} message ${JSON.stringify(data).length}b`, this.whois())
 
     if (!msg.type) {
       throw new Error('no msg.type found')
@@ -159,7 +162,7 @@ export class Client {
       type: 'subscribed'
     }
 
-    this.clientManager.webhookManager.addWallet(this.wallet)
+    this.clientManager.webhookManager.addWallets(this.wallet)
 
     this.send(msg)
   }

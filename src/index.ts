@@ -106,10 +106,14 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
 
     console.log(from)
     console.log(to)
-    const client = clientManager.clients.find((c)=>c.wallet==from.toLowerCase() || c.wallet==to.toLowerCase())
-    if(client){
-      const msg = {from,to,contract:activity.rawContract.address}
-      client.sendNotify(msg)
+    // filter because there can be multiple clients with the same wallet
+    const clients = clientManager.clients.filter((c)=>c.wallet==from.toLowerCase() || c.wallet==to.toLowerCase())
+    for(const client of clients){
+      if(client){
+        const msg = {from,to,contract:activity.rawContract.address}
+        client.sendNotify(msg)
+      }
+
     }
   }
 })
