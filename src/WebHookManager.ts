@@ -133,6 +133,7 @@ export default class WebhookManager {
     }
 
     let r = await p.json()
+    console.log(r)
 
     if(r){
       return true
