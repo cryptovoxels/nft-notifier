@@ -4,7 +4,7 @@ const fetch = require('node-fetch')
 const app_id = 'ltyb827zi6bnrzg2'
 const AUTH_KEY = process.env.ALCHEMY_TOKEN
 
-const headers = {"X-Alchemy-Token":AUTH_KEY}
+const headers = {"X-Alchemy-Token":`${AUTH_KEY}`}
 
 export default class WebhookManager {
 
@@ -17,10 +17,12 @@ export default class WebhookManager {
 
   create = async ()=>{
     console.log(this.clientManager.clients.map((c)=>c.wallet))
+    console.log(AUTH_KEY)
     const body = {
       app_id:"ltyb827zi6bnrzg2",
       webhook_type:4,
-      webhook_url:`https://notifier.crvox.com/hook`
+      webhook_url:`https://notifier.crvox.com/hook`,
+      addresses:this.clientManager.clients.map((c)=>c.wallet)
     }
 
     let p 
