@@ -18,16 +18,16 @@ export default class WebhookManager {
   create = async ()=>{
     console.log(this.clientManager.clients.map((c)=>c.wallet))
     console.log(AUTH_KEY)
-    const body = {
+    const body = JSON.stringify({
       app_id:"ltyb827zi6bnrzg2",
       webhook_type:4,
       webhook_url:`https://notifier.crvox.com/hook`,
       addresses:this.clientManager.clients.map((c)=>c.wallet)
-    }
+    })
 
     let p 
     try{
-      p = await fetch(`https://dashboard.alchemyapi.io/api/create-webhook`,{method:'POST',headers:headers as any,body:body as any})
+      p = await fetch(`https://dashboard.alchemyapi.io/api/create-webhook`,{method:'POST',headers,body})
     }catch(e){
       console.error(e)
       return false
@@ -87,7 +87,7 @@ export default class WebhookManager {
 
     let p 
     try{
-      p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook-addresses`,{method:'PATCH',headers:headers as any,body:body as any})
+      p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook-addresses`,{method:'PATCH',headers,body})
     }catch(e){
       console.error(e)
       return false
