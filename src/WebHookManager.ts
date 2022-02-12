@@ -13,11 +13,49 @@ export default class WebhookManager {
   is_active:boolean = false
   constructor(clientManager:ClientManager){
     this.clientManager = clientManager
+    this.getRemoteHooks()
+  }
+
+  getRemoteHooks = async ()=>{
+    let p 
+    try{
+      p = await fetch(`https://dashboard.alchemyapi.io/api/create-webhook`,{method:'GET',headers})
+    }catch(e){
+      console.error(e)
+      return 
+    }
+    
+    if(!p){
+      return 
+    }
+    let r = await p.json() as {data:{id:number,webhook_url:string,app_id:string,is_active:boolean}[]}
+
+    if(!r.data || !r.data?.length){
+      return 
+    }
+
+    let hooks = r.data.filter((d)=>d.webhook_url==`https://notifier.crvox.com/hook`)
+    if(!hooks.length){
+      return 
+    }
+    
+    for(const [index,hook] of hooks.entries()){
+      if(index==(hooks.length-1)){
+        //keep one hook and use it
+        this.webhook_id == hook.id
+        continue
+      }else{
+        WebhookManager.removeHook(hook)
+      }
+
+
+    }
   }
 
   create = async ()=>{
-    console.log(this.clientManager.clients.map((c)=>c.wallet))
-    console.log(AUTH_KEY)
+    if(this.webhook_id){
+      return
+    }
     const body = JSON.stringify({
       app_id:"ltyb827zi6bnrzg2",
       webhook_type:4,
@@ -37,7 +75,7 @@ export default class WebhookManager {
       return false
     }
     let r = await p.json() as {data:{id:number,app_id:string,is_active:boolean}}
-    console.log(r)
+
     if(r.data && r.data.is_active){
       this.webhook_id = r.data.id
       this.is_active = r.data.is_active
@@ -50,10 +88,10 @@ export default class WebhookManager {
     if(!this.webhook_id){
       throw Error('update: no webhook_id')
     }
-    const body = {
+    const body = JSON.stringify({
       webhook_id:this.webhook_id,
       addresses:this.clientManager.clients.map((c)=>c.wallet)
-    }
+    })
 
     let p 
     try{
@@ -74,16 +112,17 @@ export default class WebhookManager {
   addWallet = async (wallet:string)=>{
     if(!this.webhook_id){
       await this.create()
+      return
     }
 
     if(!this.webhook_id){
       console.error('addWallet: No webhook_id found')
       return
     }
-    const body = {
+    const body = JSON.stringify({
       webhook_id:this.webhook_id,
       addresses_to_add:[wallet]
-    }
+    })
 
     let p 
     try{
@@ -109,14 +148,14 @@ export default class WebhookManager {
       return
     }
 
-    const body = {
+    const body = JSON.stringify({
       webhook_id:this.webhook_id,
       addresses_to_remove:[wallet]
-    }
+    })
 
     let p 
     try{
-      p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook-addresses`,{method:'PATCH',headers:headers as any,body:body as any})
+      p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook-addresses`,{method:'PATCH',headers,body})
     }catch(e){
       console.error(e)
       return false
@@ -133,14 +172,14 @@ export default class WebhookManager {
 
   setActive = async(bool:boolean)=>{
 
-    const body = {
+    const body = JSON.stringify({
       webhook_id:this.webhook_id,
       is_active:!!bool
-    }
+    })
 
     let p 
     try{
-      p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook`,{method:'PUT',headers:headers as any,body:body as any})
+      p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook`,{method:'PUT',headers,body})
     }catch(e){
       console.error(e)
       return false
@@ -153,6 +192,28 @@ export default class WebhookManager {
     let r = await p.json() as {}
     if(r){
       this.is_active=bool
+      return true
+    }
+    return false
+  }
+
+  static removeHook = async (hook:{id:number})=>{
+    
+    let body = JSON.stringify({webhook_id:hook.id})
+    let p 
+    try{
+      p = await fetch(`https://dashboard.alchemyapi.io/api/delete-webhook`,{method:'DELETE',headers,body})
+    }catch(e){
+      console.error(e)
+      return false
+    }
+    
+    if(!p){
+      return false
+    }
+    let r = await p.json() as {}
+
+    if(r){
       return true
     }
     return false
