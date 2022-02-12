@@ -62,7 +62,7 @@ export default class WebhookManager {
       webhook_url:`https://notifier.crvox.com/hook`,
       addresses:this.clientManager.clients.map((c)=>c.wallet)
     })
-    console.log('create')
+
     let p 
     try{
       p = await fetch(`https://dashboard.alchemyapi.io/api/create-webhook`,{method:'POST',headers,body})
@@ -85,6 +85,7 @@ export default class WebhookManager {
     if(r.data && r.data.is_active){
       this.webhook_id = r.data.id
       this.is_active = r.data.is_active
+      console.log(`webhook ${this.webhook_id} created`)
       return true
     }
     return false
@@ -139,9 +140,9 @@ export default class WebhookManager {
     }
 
     let r = await p.json()
-    console.log(r)
 
     if(r){
+      console.log(`wallet ${wallet} added`)
       return true
     }
     return false
@@ -171,6 +172,7 @@ export default class WebhookManager {
     let r = await p.json()
 
     if(r){
+      console.log(`wallet ${wallet} removed`)
       return true
     }
     return false
