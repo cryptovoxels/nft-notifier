@@ -62,7 +62,7 @@ export default class WebhookManager {
       webhook_url:`https://notifier.crvox.com/hook`,
       addresses:this.clientManager.clients.map((c)=>c.wallet)
     })
-
+    console.log('create')
     let p 
     try{
       p = await fetch(`https://dashboard.alchemyapi.io/api/create-webhook`,{method:'POST',headers,body})
