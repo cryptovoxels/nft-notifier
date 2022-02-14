@@ -67,10 +67,10 @@ app.get(HEALTHCHECK_URL, (req: express.Request, res: express.Response) => {
 
 app.post('/hook',async (req: express.Request, res: express.Response) => {
   console.log(req.headers)
-  if(!isValidSignature(req)){
-    res.status(400).send('Nothing to see here')
-    return
-  }
+  // if(!isValidSignature(req)){
+  //   res.status(400).send('Nothing to see here')
+  //   return
+  // }
 
   if(!('app' in req.body)){
     res.status(200).send('Nothing to see here')
@@ -106,15 +106,17 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
 
     console.log(from)
     console.log(to)
+    
     // filter because there can be multiple clients with the same wallet
-    const clients = clientManager.clients.filter((c)=>c.wallet==from.toLowerCase() || c.wallet==to.toLowerCase())
-    for(const client of clients){
-      if(client){
-        const msg = {from,to,contract:activity.rawContract.address}
-        client.sendNotify(msg)
-      }
+    // const clients = clientManager.clients.filter((c)=>c.wallet==from.toLowerCase() || c.wallet==to.toLowerCase())
+    // for(const client of clients){
+    //   if(client){
+    //     const msg = {from,to,contract:activity.rawContract.address}
+    //     client.sendNotify(msg)
+    //   }
 
-    }
+    // }
+    clientManager.clients.forEach(c => c.sendNotify({from,to,contract:activity.rawContract.address}));
   }
 })
 
