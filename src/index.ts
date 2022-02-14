@@ -114,7 +114,8 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
     //   }
 
     // }
-    clientManager.clients.forEach(c => c.sendNotify({from,to,contract:activity.rawContract.address}));
+    const msg = {from,to,category:activity.category,contract:activity.rawContract.address,token_id:activity.erc721TokenId}
+    clientManager.clients.forEach(c => c.sendNotify(msg));
   }
 })
 const get32AddressFrom64 = (address:string)=>{
