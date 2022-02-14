@@ -93,9 +93,7 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
 
   // handle the webhook content
   for (const activity of body.activity){
-    const get32AddressFrom64 = (address:string)=>{
-      return '0x' + address.substring('0x000000000000000000000000'.length,address.length)
-    }
+
     // Here we need to convert the Address from Alchemy which looks like 
     //"0x0000000000000000000000003e4f2bae78b177b01d209e167f1cbc8839dbccf7"
     // into something like this:
@@ -119,7 +117,9 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
     clientManager.clients.forEach(c => c.sendNotify({from,to,contract:activity.rawContract.address}));
   }
 })
-
+const get32AddressFrom64 = (address:string)=>{
+  return '0x' + address.substring('0x000000000000000000000000'.length,address.length)
+}
 // GENERATE WEBSOCKET 
 const wss = new Server({ server: server, maxPayload: 4096, perMessageDeflate: false })
 
