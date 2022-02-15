@@ -94,7 +94,7 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
 
   // handle the webhook content
   for (const activity of body.activity){
-
+    console.log(activity)
     if(activity.category!=='token'){
      continue
     }
@@ -130,7 +130,7 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
       to,
       hash:activity.hash,
       value:activity.value,
-      type,
+      category:type,
       contract:activity.rawContract.address,
       token_id:activity.erc721TokenId,
     }
