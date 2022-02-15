@@ -105,6 +105,7 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
       category = 'parcel'
       if(activity.log){
         token_id = parseInt(activity.log?.data,16).toString()
+        console.log(token_id)
       }
     }
 
