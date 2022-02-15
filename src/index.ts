@@ -9,7 +9,7 @@ import { createWebSocketClientChannel } from './createWebSocketClientChannel'
 import { ClientManager } from './ClientManager'
 import { createRateLimiter } from './createRateLimiter'
 import { alchemyNotifyResponse, isValidSignature } from './lib/lib'
-import { getCollectibleCollection } from './lib/helper'
+import { getCollectibleCollection, isCVContract } from './lib/helper'
 
 const bodyParser = require("body-parser")
 // @todo make sure the 'app_template' below is changed to the apps name so we can find the logs in LogDNA
@@ -99,12 +99,21 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
      continue
     }
 
-    let type:'token'|'collectible'|'coin' = 'token'
+    let category:'token'|'collectible'|'coin'|'parcel' = 'token'
+    let token_id = activity.erc721TokenId
+    if(activity.asset=='CVPA' && !!isCVContract(activity.rawContract.address)){
+      category = 'parcel'
+      if(activity.log){
+        token_id = parseInt(activity.log?.data,16).toString()
+      }
+    }
 
     let p = await getCollectibleCollection(activity.rawContract.address)
     if(p){
-      type = 'collectible'
+      category = 'collectible'
     }
+
+
     // Here we need to convert the Address from Alchemy which looks like 
     //"0x0000000000000000000000003e4f2bae78b177b01d209e167f1cbc8839dbccf7"
     // into something like this:
@@ -130,7 +139,7 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
       to,
       hash:activity.hash,
       value:activity.value,
-      category:type,
+      category:category,
       contract:activity.rawContract.address,
       token_id:activity.erc721TokenId,
     }

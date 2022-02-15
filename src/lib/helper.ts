@@ -24,3 +24,7 @@ export const getCollectibleCollection =async (address:string)=>{
   }
   return r.collection
 }
+
+export const isCVContract=(address:string)=>{
+  return address.toLowerCase() == process.env.CONTRACT_ADDRESS?.toLowerCase() || address.toLowerCase() == process.env.RINKEBY_CONTRACT_ADDRESS?.toLowerCase()
+}
