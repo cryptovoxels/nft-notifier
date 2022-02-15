@@ -114,7 +114,7 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
     //   }
 
     // }
-    const msg = {from,to,hash:activity.hash,category:activity.category,contract:activity.rawContract.address,token_id:activity.erc721TokenId}
+    const msg = {from,to,hash:activity.hash,value:activity.value,category:activity.category,contract:activity.rawContract.address,token_id:activity.erc721TokenId}
     clientManager.clients.forEach(c => c.sendNotify(msg));
   }
 })
