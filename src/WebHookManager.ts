@@ -12,6 +12,7 @@ retry.onRetry((reason) => log.debug(`retrying a function call, delaying ${reason
 
 const headers = {"X-Alchemy-Token":`${AUTH_KEY}`}
 type hook = {id:number,webhook_url:string,app_id:string,is_active:boolean,addresses?:string[]}
+type hookIdOnly = {id:number}
 export default class WebhookManager {
 
   webhook_id:number|undefined
@@ -275,7 +276,13 @@ export default class WebhookManager {
     return false
   }
 
-  static removeHook = async (hook:hook)=>{
+  clean = ()=>{
+    if(this.webhook_id){
+      WebhookManager.removeHook({id:this.webhook_id})
+    }
+  }
+
+  static removeHook = async (hook:hookIdOnly)=>{
     if(!hook){
       return
     }

@@ -9,6 +9,7 @@ import { createWebSocketClientChannel } from './createWebSocketClientChannel'
 import { ClientManager } from './ClientManager'
 import { createRateLimiter } from './createRateLimiter'
 import hookHandler from './HookHandler'
+import { CLIENT_INACTIVE_TIMEOUT_MS } from './client'
 
 const bodyParser = require("body-parser")
 // @todo make sure the 'app_template' below is changed to the apps name so we can find the logs in LogDNA
@@ -80,6 +81,16 @@ const wss = new Server({ server: server, maxPayload: 4096, perMessageDeflate: fa
 
 const clientManager = new ClientManager(jwtSecret, loginRateLimiter)
 
+const inactiveInterval = setInterval(() => {
+  clientManager.removeInactiveClients()
+
+  if (clientManager.clients.length === 0) {
+    clientManager.webhookManager.clean()
+  }
+
+}, CLIENT_INACTIVE_TIMEOUT_MS)
+
+
 wss.on('connection', async (ws: WebSocket, req: IncomingMessage) => {
   const ipAddr = inferIpAddr(req)
     addClient( ws,ipAddr)
@@ -89,9 +100,9 @@ wss.on('listening', () => {
   log.info('Websocket server started')
 })
 wss.on('close', () => {
+  clearInterval(inactiveInterval)
   log.info('Websocket server closing')
 })
-
 
 serverListen()
 
