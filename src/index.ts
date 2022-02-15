@@ -9,6 +9,7 @@ import { createWebSocketClientChannel } from './createWebSocketClientChannel'
 import { ClientManager } from './ClientManager'
 import { createRateLimiter } from './createRateLimiter'
 import { alchemyNotifyResponse, isValidSignature } from './lib/lib'
+import { getCollectibleCollection } from './lib/helper'
 
 const bodyParser = require("body-parser")
 // @todo make sure the 'app_template' below is changed to the apps name so we can find the logs in LogDNA
@@ -94,6 +95,16 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
   // handle the webhook content
   for (const activity of body.activity){
 
+    if(activity.category!=='token'){
+     continue
+    }
+
+    let type:'token'|'collectible'|'coin' = 'token'
+
+    let p = await getCollectibleCollection(activity.rawContract.address)
+    if(p){
+      type = 'collectible'
+    }
     // Here we need to convert the Address from Alchemy which looks like 
     //"0x0000000000000000000000003e4f2bae78b177b01d209e167f1cbc8839dbccf7"
     // into something like this:
@@ -114,7 +125,15 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
     //   }
 
     // }
-    const msg = {from,to,hash:activity.hash,value:activity.value,category:activity.category,contract:activity.rawContract.address,token_id:activity.erc721TokenId}
+    const msg = {
+      from,
+      to,
+      hash:activity.hash,
+      value:activity.value,
+      type,
+      contract:activity.rawContract.address,
+      token_id:activity.erc721TokenId,
+    }
     clientManager.clients.forEach(c => c.sendNotify(msg));
   }
 })

@@ -64,7 +64,7 @@ export type notifyActivity = {
   fromAddress:string,
   toAddress:string,
   blockNum:string,
-  category:string,
+  category:'external'|'internal'|'token',
   hash:string,
   value:number,
   erc721TokenId:string|null,
@@ -99,3 +99,19 @@ type ethLog = {
   logIndex:string,
   removed:boolean
 }
+
+
+export type Collection= {
+  id:number,
+  name:string,
+  description:string,
+  image_url:string,
+  owner:string,
+  owner_name:string,
+  address:string,
+  slug:string,
+  type:"ERC1155"|"ERC721",
+  chainid:1|137,
+  settings:any,
+    rejected_at:null,
+    created_at:string}
