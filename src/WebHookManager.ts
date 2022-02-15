@@ -57,6 +57,9 @@ export default class WebhookManager {
 
     let hooks = r.data.filter((d)=>d.webhook_url===`https://notifier.crvox.com/hook` && d.app_id.toLowerCase()==app_id?.toLowerCase())
     if(!hooks.length){
+      if(this.webhook_id){
+        this.webhook_id =undefined
+      }
       return null
     }
 
