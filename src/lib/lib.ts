@@ -16,6 +16,8 @@ export function isValidSignature(request:express.Request) {
   return (signature === digest); // If signature equals your computed hash, return true
 }
 
+export const API = 'https://www.cryptovoxels.com/api/'
+
 export type MessageType = 'subscribe' | 'unsubscribe' | 'notify' |'ping'|'pong' | 'login' |'subscribed'
 
 export type Message = {type:MessageType}
