@@ -1,5 +1,5 @@
 import { alchemyNotifyResponse, isValidSignature } from './lib/lib'
-import { getCollectibleMetadata, getParcelMetadata, isCVCollection, isCVContract } from './lib/helper'
+import { getCollectibleMetadata, getNameMetadata, getParcelMetadata, isCVCollection, isCVContract, isCVName } from './lib/helper'
 import express from 'express'
 import { ClientManager } from './ClientManager'
 
@@ -80,6 +80,12 @@ export default async function hookHandler  (req: express.Request, res: express.R
       }
 
 
+    }else if(isCVName(address)){
+      category = 'token'
+      if(activity.log){
+        token_id = parseInt(activity.log?.data,16).toString()
+        metadata = await getNameMetadata(token_id)
+      }
     }
     
     console.log(from)
