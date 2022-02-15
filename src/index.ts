@@ -1,6 +1,6 @@
 require('dotenv').config()
 import cors from 'cors'
-import express from 'express'
+import express, { NextFunction } from 'express'
 import WebSocket, { Server } from 'ws'
 import { server,serverListen, app, HEALTHCHECK_URL, createLogger, createWWWLogger } from '@cryptovoxels/app-basics'
 import { name, version } from '../package.json'
@@ -8,8 +8,7 @@ import { IncomingMessage } from 'http'
 import { createWebSocketClientChannel } from './createWebSocketClientChannel'
 import { ClientManager } from './ClientManager'
 import { createRateLimiter } from './createRateLimiter'
-import { alchemyNotifyResponse, isValidSignature } from './lib/lib'
-import { getCollectibleCollection, isCVContract } from './lib/helper'
+import hookHandler from './HookHandler'
 
 const bodyParser = require("body-parser")
 // @todo make sure the 'app_template' below is changed to the apps name so we can find the logs in LogDNA
@@ -66,90 +65,16 @@ app.get(HEALTHCHECK_URL, (req: express.Request, res: express.Response) => {
   res.status(200).end(`up`)
 })
 
-app.post('/hook',async (req: express.Request, res: express.Response) => {
-  console.log(req.headers)
-  // if(!isValidSignature(req)){
-  //   res.status(400).send('Nothing to see here')
-  //   return
-  // }
-
-  if(!('app' in req.body)){
-    res.status(200).send('Nothing to see here')
-    return
-  }
-
+app.post('/hook', (req: express.Request, res: express.Response,next:NextFunction) =>{ 
   if(!clientManager){
-    res.status(400).send('Not ready')
-    return
-  }
-
-  const body = req.body as alchemyNotifyResponse
-
-  res.status(200).end() // reply quickly
-
-  if(!body.activity){
-    // we currently dont care about dropped tx or mined tx;
-    return
-  }
-
-  // handle the webhook content
-  for (const activity of body.activity){
-    console.log(activity)
-    if(activity.category!=='token'){
-     continue
-    }
-
-    let category:'token'|'collectible'|'coin'|'parcel' = 'token'
-    let token_id = activity.erc721TokenId
-    if(activity.asset=='CVPA' && !!isCVContract(activity.rawContract.address)){
-      category = 'parcel'
-      if(activity.log){
-        token_id = parseInt(activity.log?.data,16).toString()
-        console.log(token_id)
-      }
-    }
-
-    let p = await getCollectibleCollection(activity.rawContract.address)
-    if(p){
-      category = 'collectible'
-    }
-
-
-    // Here we need to convert the Address from Alchemy which looks like 
-    //"0x0000000000000000000000003e4f2bae78b177b01d209e167f1cbc8839dbccf7"
-    // into something like this:
-    //"0x3e4f2bae78b177b01d209e167f1cbc8839dbccf7"
-
-    const from = get42AddressFrom64(activity.fromAddress)
-    const to = get42AddressFrom64(activity.toAddress)
-
-    console.log(from)
-    console.log(to)
-    
-    // filter because there can be multiple clients with the same wallet
-    // const clients = clientManager.clients.filter((c)=>c.wallet==from.toLowerCase() || c.wallet==to.toLowerCase())
-    // for(const client of clients){
-    //   if(client){
-    //     const msg = {from,to,contract:activity.rawContract.address}
-    //     client.sendNotify(msg)
-    //   }
-
-    // }
-    const msg = {
-      from,
-      to,
-      hash:activity.hash,
-      value:activity.value,
-      category,
-      contract:activity.rawContract.address,
-      token_id,
-    }
-    clientManager.clients.forEach(c => c.sendNotify(msg));
-  }
-})
-const get42AddressFrom64 = (address:string)=>{
-  return address.length>43?'0x' + address.substring('0x000000000000000000000000'.length,address.length):address
+  res.status(400).send('Not ready')
+  return
+}else{
+  next()
 }
+},(req,res)=>hookHandler(req,res,clientManager))
+
+
 // GENERATE WEBSOCKET 
 const wss = new Server({ server: server, maxPayload: 4096, perMessageDeflate: false })
 
