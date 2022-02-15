@@ -140,9 +140,9 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
       to,
       hash:activity.hash,
       value:activity.value,
-      category:category,
+      category,
       contract:activity.rawContract.address,
-      token_id:activity.erc721TokenId,
+      token_id,
     }
     clientManager.clients.forEach(c => c.sendNotify(msg));
   }
