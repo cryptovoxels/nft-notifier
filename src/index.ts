@@ -138,7 +138,7 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
   }
 })
 const get42AddressFrom64 = (address:string)=>{
-  return address.length>=41?'0x' + address.substring('0x000000000000000000000000'.length,address.length):address
+  return address.length>43?'0x' + address.substring('0x000000000000000000000000'.length,address.length):address
 }
 // GENERATE WEBSOCKET 
 const wss = new Server({ server: server, maxPayload: 4096, perMessageDeflate: false })
