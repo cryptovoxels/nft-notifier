@@ -1,5 +1,5 @@
 import { alchemyNotifyResponse, isValidSignature } from './lib/lib'
-import { getCollectibleCollection, getParcelMetadata, isCVContract } from './lib/helper'
+import { getCollectibleMetadata, getParcelMetadata, isCVCollection, isCVContract } from './lib/helper'
 import express from 'express'
 import { ClientManager } from './ClientManager'
 
@@ -27,59 +27,83 @@ export default async function hookHandler  (req: express.Request, res: express.R
   // handle the webhook content
   for (const activity of body.activity){
     console.log(activity)
-    if(activity.category!=='token'){
+    if(activity.category!=='token' && activity.category!=='erc1155'){
      continue
     }
 
     let category:'token'|'collectible'|'coin'|'parcel' = 'token'
     let token_id = activity.erc721TokenId
     let metadata = null
-    if(activity.asset=='CVPA' && !!isCVContract(activity.rawContract.address)){
+    let chain =body.network=='MAINNET'?1:body.network=='MATIC_MAINNET'?137:8007
+    const from = get42AddressFrom64(activity.fromAddress)
+    const to = get42AddressFrom64(activity.toAddress)
+    const address =activity.rawContract.address
+
+    if(activity.asset=='CVPA' && !!isCVContract(address)){
       category = 'parcel'
       if(activity.log){
         token_id = parseInt(activity.log?.data,16).toString()
-        console.log(token_id)
         metadata = await getParcelMetadata(token_id)
       }
+    }else if(activity.category == 'erc1155'){
+
+      if(!activity.erc1155Metadata){
+        continue
+      }
+      let isCollection = await isCVCollection(address)
+      if(isCollection){
+
+        for(const mt of activity.erc1155Metadata){
+          let metadata = await getCollectibleMetadata(chain,address,parseInt(mt.tokenId,16))
+          if(!metadata){
+            continue
+          }
+          const msg = {
+            from,
+            to,
+            chain,
+            hash:activity.hash,
+            value:parseInt(mt.value),
+            category:'collectible',
+            contract:address,
+            token_id:parseInt(mt.tokenId,16).toString(),
+            metadata
+          }
+
+            const clients = clientManager.clients.filter((c)=>c.wallet.toLowerCase()==to.toLowerCase())
+            for(const client of clients){
+              if(client){
+                client.sendNotify(msg)
+              }
+            }
+        }
+      }
+
+
     }
-
-    let p = await getCollectibleCollection(activity.rawContract.address)
-    if(p){
-      category = 'collectible'
-    }
-
-
-    // Here we need to convert the Address from Alchemy which looks like 
-    //"0x0000000000000000000000003e4f2bae78b177b01d209e167f1cbc8839dbccf7"
-    // into something like this:
-    //"0x3e4f2bae78b177b01d209e167f1cbc8839dbccf7"
-
-    const from = get42AddressFrom64(activity.fromAddress)
-    const to = get42AddressFrom64(activity.toAddress)
-
+    
     console.log(from)
     console.log(to)
-    
-    // filter because there can be multiple clients with the same wallet
-    // const clients = clientManager.clients.filter((c)=>c.wallet==from.toLowerCase() || c.wallet==to.toLowerCase())
-    // for(const client of clients){
-    //   if(client){
-    //     const msg = {from,to,contract:activity.rawContract.address}
-    //     client.sendNotify(msg)
-    //   }
-
-    // }
     const msg = {
       from,
       to,
+      chain,
       hash:activity.hash,
       value:activity.value,
       category,
-      contract:activity.rawContract.address,
+      contract:address,
       token_id,
       metadata
     }
-    clientManager.clients.forEach(c => c.sendNotify(msg));
+    // filter because there can be multiple clients with the same wallet
+    const clients = clientManager.clients.filter((c)=> c.wallet.toLowerCase()==to.toLowerCase())
+    for(const client of clients){
+      if(client){
+        client.sendNotify(msg)
+      }
+
+    }
+
   }
 }
 

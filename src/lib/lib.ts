@@ -64,11 +64,11 @@ export type notifyActivity = {
   fromAddress:string,
   toAddress:string,
   blockNum:string,
-  category:'external'|'internal'|'token',
+  category:'external'|'internal'|'token'|'erc1155',
   hash:string,
   value:number,
   erc721TokenId:string|null,
-  erc1155Metadata:any,
+  erc1155Metadata:{tokenId:string,value:string}[]|null,
   typeTraceAddress:string|null,
   asset:string,
   log:ethLog|null|undefined
@@ -81,7 +81,7 @@ export type notifyActivity = {
 
 export type alchemyNotifyResponse = {
   app:string,
-  network:string,
+  network:'MAINNET'|'RINKEBY'|'MATIC_MAINNET',
   webhookType:'ADDRESS_ACTIVITY'|'DROPPED_TRANSACTION'|'MINED_TRANSACTION',
   timestamp:string,
   activity:notifyActivity[] |undefined
