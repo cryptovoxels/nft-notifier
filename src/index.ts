@@ -110,8 +110,8 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
     // into something like this:
     //"0x3e4f2bae78b177b01d209e167f1cbc8839dbccf7"
 
-    const from = get32AddressFrom64(activity.fromAddress)
-    const to = get32AddressFrom64(activity.toAddress)
+    const from = get42AddressFrom64(activity.fromAddress)
+    const to = get42AddressFrom64(activity.toAddress)
 
     console.log(from)
     console.log(to)
@@ -137,8 +137,8 @@ app.post('/hook',async (req: express.Request, res: express.Response) => {
     clientManager.clients.forEach(c => c.sendNotify(msg));
   }
 })
-const get32AddressFrom64 = (address:string)=>{
-  return '0x' + address.substring('0x000000000000000000000000'.length,address.length)
+const get42AddressFrom64 = (address:string)=>{
+  return address.length>=41?'0x' + address.substring('0x000000000000000000000000'.length,address.length):address
 }
 // GENERATE WEBSOCKET 
 const wss = new Server({ server: server, maxPayload: 4096, perMessageDeflate: false })
