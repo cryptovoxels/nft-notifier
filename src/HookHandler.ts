@@ -105,6 +105,7 @@ export default async function hookHandler(req: express.Request, res: express.Res
       }
     } else if(activity.category=='external'){
       category='coin'
+      symbol = activity.asset
       if(['ETH','WETH','MATIC','USDT'].includes(activity.asset)){
         token_id = activity.value.toString()
       }else{
