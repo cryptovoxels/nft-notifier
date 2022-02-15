@@ -1,7 +1,7 @@
 import { ClientManager } from "./ClientManager"
 import {createLogger } from '@cryptovoxels/app-basics'
 const fetch = require('node-fetch')
-const app_id = 'ltyb827zi6bnrzg2'
+const app_id = process.env.APP_ID
 const AUTH_KEY = process.env.ALCHEMY_TOKEN
 import { Policy } from 'cockatiel'
 
