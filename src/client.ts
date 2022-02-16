@@ -4,6 +4,7 @@ import { ClientChannel } from './lib/ClientChannel'
 import { Policy } from 'cockatiel'
 import { ClientManager } from './ClientManager'
 import { LoginMessage, messages, MessageSubscribed, MessageType, PingMessage, PongMessage, throwUnhandledCase } from './lib/lib'
+import * as cvMessages from '@cryptovoxels/messages'
 
 export const CLIENT_INACTIVE_TIMEOUT_MS = 60000 * 5
 
@@ -91,8 +92,13 @@ export class Client {
   }
 
 
-  private onMessage(message: string) {
-    let data = JSON.parse(message)
+  private onMessage(message: string|Uint8Array) {
+    let data
+    if(typeof message =='string'){
+      data = JSON.parse(message)
+    }else{
+      data = cvMessages.decode(message)
+    }
     try {
       this.processMessage(data)
     } catch (err) {
@@ -105,6 +111,7 @@ export class Client {
   /** returns true if the message should be broadcast **/
   private processMessage(data: messages): void {
     const msg = data
+
     // log.debug(`received ${msg.type} message ${JSON.stringify(data).length}b`, this.whois())
 
     if (!msg.type) {
@@ -119,7 +126,8 @@ export class Client {
     }
 
     switch (msg.type) {
-      case 'login':
+      case cvMessages.MessageType.login:
+        msg.type='login'
         this.handleLogin(msg as LoginMessage)
         break
       case 'unsubscribe':

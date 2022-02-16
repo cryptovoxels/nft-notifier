@@ -18,7 +18,7 @@ export function isValidSignature(request:express.Request) {
 
 export const API = 'https://www.cryptovoxels.com/api/'
 
-export type MessageType = 'subscribe' | 'unsubscribe' | 'notify' |'ping'|'pong' | 'login' |'subscribed'
+export type MessageType = 'subscribe' | 'unsubscribe' | 'notify' |'ping'|'pong' | 'login' |'subscribed' |number
 
 export type Message = {type:MessageType}
 export type MessageSubscribe = {type:'subscribe',wallet:string}
