@@ -1,4 +1,4 @@
-import { Collection } from "./lib"
+import { API, Collection } from "./lib"
 
 const fetch = require('node-fetch')
 
@@ -27,6 +27,14 @@ export const isCVCollection =async (address:string)=>{
 
 export const isCVContract=(address:string)=>{
   return address.toLowerCase() == process.env.CONTRACT_ADDRESS?.toLowerCase() || address.toLowerCase() == process.env.RINKEBY_CONTRACT_ADDRESS?.toLowerCase()
+}
+
+export const refreshParcel = (token_id:any)=>{
+  try{
+    fetch(`${API}/parcels/${token_id}/query`)
+  }catch{
+    
+  }
 }
 
 export const isCVName=(address:string)=>{

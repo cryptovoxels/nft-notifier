@@ -1,5 +1,5 @@
-import { alchemyNotifyResponse, API, isValidSignature } from './lib/lib'
-import { getCollectibleMetadata, getNameMetadata, getParcelMetadata, isCVCollection, isCVContract, isCVName } from './lib/helper'
+import { alchemyNotifyResponse, isValidSignature } from './lib/lib'
+import { getCollectibleMetadata, getNameMetadata, getParcelMetadata, isCVCollection, isCVContract, isCVName, refreshParcel } from './lib/helper'
 import express from 'express'
 import { ClientManager } from './ClientManager'
 
@@ -49,7 +49,7 @@ export default async function hookHandler(req: express.Request, res: express.Res
 
         if (token_id) {
           // query a refresh of the parcel so the owner is always refreshed
-          fetch(`${API}/parcels/${token_id}/query`)
+          refreshParcel(token_id)
         }
       }
     } else if (activity.category == 'erc1155') {
