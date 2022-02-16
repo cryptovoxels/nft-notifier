@@ -15,7 +15,7 @@ const bodyParser = require("body-parser")
 // @todo make sure the 'app_template' below is changed to the apps name so we can find the logs in LogDNA
 const log = createLogger('nft-notifier')
 
-const jwtSecret = process.env.JWT_SECRET
+const jwtSecret = process.env.JWT_SECRET|| process.env.UAT_JWT_SECRET
 if (!jwtSecret) {
   throw new Error('Invalid configuration: JWT_SECRET is required')
 }
