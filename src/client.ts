@@ -144,8 +144,8 @@ export class Client {
     let pckge:{type:'login',token:string}|null = null
     try{
       pckge = cvMessages.decode(message.bytes)
-    }catch{
-
+    }catch(err){
+      console.error(err)
     }
     if(!pckge){
       this.failedLogin(`Bad Message`)
