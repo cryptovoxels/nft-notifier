@@ -26,7 +26,7 @@ export const isCVCollection =async (address:string)=>{
 }
 
 export const isCVContract=(address:string)=>{
-  return address.toLowerCase() == process.env.CONTRACT_ADDRESS?.toLowerCase() || address.toLowerCase() == process.env.RINKEBY_CONTRACT_ADDRESS?.toLowerCase()
+  return address?.toLowerCase() == process.env.CONTRACT_ADDRESS?.toLowerCase() || address?.toLowerCase() == process.env.RINKEBY_CONTRACT_ADDRESS?.toLowerCase()
 }
 
 export const refreshParcel = (token_id:any)=>{
@@ -38,7 +38,7 @@ export const refreshParcel = (token_id:any)=>{
 }
 
 export const isCVName=(address:string)=>{
-  return address.toLowerCase() == process.env.NAME_ADDRESS?.toLowerCase()
+  return address?.toLowerCase() == process.env.NAME_ADDRESS?.toLowerCase()
 }
 
 export const getParcelMetadata =async (token_id:string)=>{

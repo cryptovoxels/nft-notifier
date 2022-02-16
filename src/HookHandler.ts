@@ -41,7 +41,7 @@ export default async function hookHandler(req: express.Request, res: express.Res
     const to = get42AddressFrom64(activity.toAddress)
     const address = activity.rawContract.address
 
-    if (isCVContract(address)) {
+    if (symbol == 'CVPA' && isCVContract(address)) {
       category = 'parcel'
       if (activity.log) {
         token_id = parseInt(activity.log?.data, 16).toString()
@@ -89,7 +89,6 @@ export default async function hookHandler(req: express.Request, res: express.Res
       // we sent the notifications, don't continue
       break
     } else if (isCVName(address)) {
-      category = 'token'
       if (activity.erc721TokenId) {
         token_id = parseInt(activity.erc721TokenId, 16).toString()
       }
