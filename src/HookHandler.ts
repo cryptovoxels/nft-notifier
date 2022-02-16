@@ -5,10 +5,10 @@ import { ClientManager } from './ClientManager'
 
 export default async function hookHandler(req: express.Request, res: express.Response, clientManager: ClientManager) {
   console.log(req.headers)
-  // if(!isValidSignature(req)){
-  //   res.status(400).send('Nothing to see here')
-  //   return
-  // }
+  if(!isValidSignature(req)){
+    res.status(400).send('Nothing to see here')
+    return
+  }
 
   if (!('app' in req.body)) {
     res.status(200).send('Nothing to see here')

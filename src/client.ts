@@ -92,13 +92,9 @@ export class Client {
   }
 
 
-  private onMessage(message: string|Uint8Array) {
-    let data
-    if(typeof message =='string'){
-      data = JSON.parse(message)
-    }else{
-      data = cvMessages.decode(message)
-    }
+  private onMessage(message: string) {
+    let data = JSON.parse(message)
+    
     try {
       this.processMessage(data)
     } catch (err) {
@@ -126,8 +122,7 @@ export class Client {
     }
 
     switch (msg.type) {
-      case cvMessages.MessageType.login:
-        msg.type='login'
+      case 'login':
         this.handleLogin(msg as LoginMessage)
         break
       case 'unsubscribe':
@@ -146,9 +141,19 @@ export class Client {
 
   private async handleLogin(message: LoginMessage): Promise<void> {
     let decoded = null
+    let pckge:{type:'login',token:string}|null = null
+    try{
+      pckge = cvMessages.decode(message.bytes)
+    }catch{
+
+    }
+    if(!pckge){
+      this.failedLogin(`Bad Message`)
+      return
+    }
 
     try {
-      decoded = jwt.verify(message.jwt, this.jwtSecret)
+      decoded = jwt.verify(pckge.token, this.jwtSecret)
     } catch (err: any) {
       this.failedLogin(`Bad JWT: '${err.toString()}'`)
       return
