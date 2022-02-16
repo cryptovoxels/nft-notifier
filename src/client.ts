@@ -155,10 +155,21 @@ export class Client {
     try {
       decoded = jwt.verify(pckge.token, this.jwtSecret)
     } catch (err: any) {
-      this.failedLogin(`Bad JWT: '${err.toString()}'`)
+    }
+    if(!decoded && process.env.UAT_JWT_SECRET){
+      log.info('Trying UAT JWT')
+      try {
+        decoded = jwt.verify(pckge.token, process.env.UAT_JWT_SECRET)
+      } catch (err: any) {
+        this.failedLogin(`Bad JWT: '${err.toString()}'`)
+        return
+      }
+    }
+    if(!decoded){
+      this.failedLogin(`Bad JWT`)
       return
     }
-
+    
     // @ts-ignore
     const wallet = decoded?.wallet
 
