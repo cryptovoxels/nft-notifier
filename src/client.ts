@@ -120,7 +120,7 @@ export class Client {
       //whois['msg'] = msg
       log.warn('received nonsensical message', whois)
     }
-    log.info(msg)
+
     switch (msg.type) {
       case 'login':
         this.handleLogin(msg as LoginMessage)
@@ -143,7 +143,7 @@ export class Client {
     let decoded = null
     let pckge:cvMessages.LoginMessage|null = null
     try{
-      pckge = cvMessages.decode(message.bytes)
+      pckge = cvMessages.decode(Uint8Array.from(message.bytes))
     }catch(err){
       console.error(err)
     }

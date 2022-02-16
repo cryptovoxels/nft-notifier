@@ -23,7 +23,7 @@ export type MessageType = 'subscribe' | 'unsubscribe' | 'notify' |'ping'|'pong' 
 export type Message = {type:MessageType}
 export type MessageSubscribe = {type:'subscribe',wallet:string}
 export type MessageSubscribed = {type:'subscribed'}
-export type LoginMessage = {type:'login',bytes:Uint8Array}
+export type LoginMessage = {type:'login',bytes:Array<any>}
 export type PingMessage = {type:'ping'}
 export type PongMessage = {type:'pong'}
 
