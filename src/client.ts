@@ -186,7 +186,7 @@ export class Client {
       type: 'subscribed'
     }
 
-    this.clientManager.webhookManager.addWallets(this.wallet)
+    this.clientManager.webhookManager.addWalletsToAllChains(this.wallet)
 
     this.send(msg)
   }

@@ -25,6 +25,7 @@ export class ClientManager {
     private readonly loginRateLimiter: RateLimiter,
   ) {
     this.webhookManager = new WebhookManager(this)
+    this.webhookManager.init()
   }
 
   async addClient(channel: ClientChannel, ipAddr: string): Promise<AddClientResult> {

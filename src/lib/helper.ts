@@ -1,6 +1,9 @@
+import { createLogger } from "@cryptovoxels/app-basics/dist/logger"
 import { API, Collection } from "./lib"
 
 const fetch = require('node-fetch')
+const AUTH_KEY = process.env.ALCHEMY_TOKEN
+export const headers = { 'X-Alchemy-Token': `${AUTH_KEY}` }
 
 export const isCVCollection =async (address:string)=>{
   let p 
@@ -116,4 +119,32 @@ export const getCollectibleMetadata =async (chain:number,address:string,token_id
 
   let imageSrc = `https://wearables.sfo2.digitaloceanspaces.com/${r.collectible.id}-${slug}.gif`
   return Object.assign(r.collectible,{image:imageSrc})
+}
+
+const log = createLogger('HOOKManager')
+
+
+export async function udpateWebhookAddresses(body:{
+  webhook_id: string|number,
+  addresses_to_add: string[],
+  addresses_to_remove: string[],
+}){
+
+  const pckge = JSON.stringify(body)
+
+  let p
+  try {
+    p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook-addresses`, { method: 'PATCH', headers, body:pckge })
+  } catch (e) {
+    console.error(e)
+    return false
+  }
+
+  let r = await p.json()
+
+  if (r) {
+    log.info(`wallet ${JSON.stringify(body.addresses_to_add)} added`)
+    return true
+  }
+  return false
 }
