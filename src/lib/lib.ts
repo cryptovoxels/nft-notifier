@@ -5,15 +5,21 @@ export function throwUnhandledCase(n: never): never {
   throw new Error('Unhandled case: ' + JSON.stringify(n))
 }
 
+const tokens = ['zoyH14z0ZxPAaMEguARrSmwwgVo4gwvS','whsec_JKtwrANeaul37M3UlPHNqQiE'];
+
 export function isValidSignature(request:express.Request) {    
-  const token = 'zoyH14z0ZxPAaMEguARrSmwwgVo4gwvS';
+
   const headers = request.headers;
   const signature = headers['x-alchemy-signature']; // Lowercase for NodeJS
-  const body = request.body;    
-  const hmac = crypto.createHmac('sha256', token) // Create a HMAC SHA256 hash using the auth token
-  hmac.update(JSON.stringify(body), 'utf8') // Update the token hash with the request body using utf8
-  const digest = hmac.digest('hex');     
-  return (signature === digest); // If signature equals your computed hash, return true
+  const body = request.body; 
+
+  let digests = tokens.map((token)=>{
+    const hmac = crypto.createHmac('sha256', token) // Create a HMAC SHA256 hash using the auth token
+    hmac.update(JSON.stringify(body), 'utf8') // Update the token hash with the request body using utf8
+    return hmac.digest('hex');  
+  })
+   
+  return !!digests.some((digest)=>signature === digest); // If signature equals your computed hash, return true
 }
 
 export const API = 'https://www.cryptovoxels.com/api/'
