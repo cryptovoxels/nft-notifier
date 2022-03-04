@@ -10,11 +10,6 @@ export default async function hookHandler(req: express.Request, res: express.Res
     return
   }
 
-  if (!('app' in req.body)) {
-    res.status(200).send('Nothing to see here')
-    return
-  }
-
   const body = req.body as alchemyNotifyResponse
 
   res.status(200).end() // reply quickly
