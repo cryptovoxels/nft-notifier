@@ -214,18 +214,18 @@ export default class WebhookManager {
 
     const Wid = this.webhook_ids.get(chain_id)
     if (!Wid) {
-      this.queues.set(chain_id,[...wallets, ...this.queues.get(chain_id)||[]]) 
+      this.queues.set(chain_id,[...walletsToAdd, ...this.queues.get(chain_id)||[]]) 
       log.warn(`addWallet: no webhook_id for ${chain_id}; saving to queue`)
       return false
     }
 
-    if (!wallets.length) {
+    if (!walletsToAdd.length) {
       return false
     }
 
     const body = {
       webhook_id: Wid,
-      addresses_to_add: [...wallets],
+      addresses_to_add: [...walletsToAdd],
       addresses_to_remove: [],
     }
 
