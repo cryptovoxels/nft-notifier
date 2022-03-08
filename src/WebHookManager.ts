@@ -295,16 +295,18 @@ export default class WebhookManager {
       p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook-addresses`, { method: 'PATCH', headers, body })
     } catch (e) {
       log.error(e)
-      return false
+      success=false
+      continue
     }
     let r = await p.json()
 
     if (r) {
       log.info(`wallet ${wallet} removed`)
-      return true
+      success=true
+      continue
     }
-    return false
-    }
+  }
+  return success
 
   }
 
