@@ -7,7 +7,7 @@ const polygon_app_id = process.env.POLYGON_APP_ID
 import { Policy } from 'cockatiel'
 import { orderBy } from 'lodash'
 
-import {headers, udpateWebhookAddresses} from './lib/helper'
+import { headers, udpateWebhookAddresses } from './lib/helper'
 
 const log = createLogger('HOOKManager')
 // Create a retry policy that'll retry whatever function we execute two more times with a randomized exponential backoff if it throws
@@ -16,28 +16,28 @@ retry.onRetry((reason) => log.debug(`retrying a function call, delaying ${reason
 
 type hook = { webhook_url: string; app_id: string; is_active: boolean; addresses?: string[] }
 
-type hookReceived = hook &{id: number|string}
-type hookLocal = hook &{id: string}
+type hookReceived = hook & { id: number | string }
+type hookLocal = hook & { id: string }
 
-type hookIdOnly = { id: number |string }
+type hookIdOnly = { id: number | string }
 
 const POLYGON_ID = 137
 const ETH_ID = 1
-const SUPPORTED_CHAINS = [ETH_ID,POLYGON_ID]
+const SUPPORTED_CHAINS = [ETH_ID, POLYGON_ID]
 export default class WebhookManager {
   // webhook per chainId 1:eth 137:polygon
-  webhook_ids: Map<number, number|string| undefined> = new Map()
-  queues:Map<number, string[]>= new Map()
+  webhook_ids: Map<number, number | string | undefined> = new Map()
+  queues: Map<number, string[]> = new Map()
   clientManager?: ClientManager
   constructor(clientManager?: ClientManager) {
     this.clientManager = clientManager
-    this.queues.set(ETH_ID,[])
-    this.queues.set(POLYGON_ID,[])
+    this.queues.set(ETH_ID, [])
+    this.queues.set(POLYGON_ID, [])
   }
 
   async init() {
     await retry.execute(async () => await this.getRemoteHooks())
-    for(const chain_id of SUPPORTED_CHAINS){
+    for (const chain_id of SUPPORTED_CHAINS) {
       console.log(chain_id)
       await this.create(chain_id as any)
     }
@@ -130,28 +130,28 @@ export default class WebhookManager {
   }
 
   setWebHookId = async (hook: hookReceived, chain: 1 | 137 = 1) => {
-    this.webhook_ids.set(chain,hook.id)
+    this.webhook_ids.set(chain, hook.id)
 
     log.info(`Current webhook: ${hook.id}`)
     // on set webhook; go through the queue of addresses
-    let a = Array.from(this.queues.get(chain)||[])
-    let p = await this.addWalletsToChain(a,chain)
+    let a = Array.from(this.queues.get(chain) || [])
+    let p = await this.addWalletsToChain(a, chain)
     if (!p) {
-      this.queues.set(chain,a)
+      this.queues.set(chain, a)
     } else {
-      this.queues.set(chain,[])
+      this.queues.set(chain, [])
     }
   }
 
-  create = async (chain:1|137=1) => {
+  create = async (chain: 1 | 137 = 1) => {
     if (this.webhook_ids.has(chain)) {
       return
     }
     const body = JSON.stringify({
-      app_id:chain==1?eth_app_id:polygon_app_id,
+      app_id: chain == 1 ? eth_app_id : polygon_app_id,
       webhook_type: 4, //activity webhook
       webhook_url: `https://notifier.crvox.com/hook`,
-      addresses: this.clientManager?.clients.map((c) => c.wallet)||[],
+      addresses: this.clientManager?.clients.map((c) => c.wallet) || [],
     })
 
     let p
@@ -181,13 +181,13 @@ export default class WebhookManager {
     return false
   }
 
-  update = async (chain:1|137=1) => {
+  update = async (chain: 1 | 137 = 1) => {
     if (!this.webhook_ids.has(chain)) {
       throw Error('update: no webhook_id')
     }
     const body = JSON.stringify({
       webhook_id: this.webhook_ids.get(chain),
-      addresses: this.clientManager?.clients.map((c) => c.wallet)||[],
+      addresses: this.clientManager?.clients.map((c) => c.wallet) || [],
     })
 
     let p
@@ -206,7 +206,7 @@ export default class WebhookManager {
     return false
   }
 
-  addWalletsToChain = async (wallets: string|string[],chain_id:1|137) => {
+  addWalletsToChain = async (wallets: string | string[], chain_id: 1 | 137) => {
     let walletsToAdd = wallets
     if (typeof wallets == 'string') {
       walletsToAdd = [wallets]
@@ -214,7 +214,7 @@ export default class WebhookManager {
 
     const Wid = this.webhook_ids.get(chain_id)
     if (!Wid) {
-      this.queues.set(chain_id,[...walletsToAdd, ...this.queues.get(chain_id)||[]]) 
+      this.queues.set(chain_id, [...walletsToAdd, ...(this.queues.get(chain_id) || [])])
       log.warn(`addWallet: no webhook_id for ${chain_id}; saving to queue`)
       return false
     }
@@ -238,21 +238,20 @@ export default class WebhookManager {
       walletsToAdd = [wallets]
     }
 
-    let success:Record<number,boolean> ={1:false,137:false}
+    let success: Record<number, boolean> = { 1: false, 137: false }
 
-    for(const chain_id of SUPPORTED_CHAINS){
+    for (const chain_id of SUPPORTED_CHAINS) {
       let Wid = this.webhook_ids.get(chain_id)
 
       if (!Wid) {
-        this.queues.set(chain_id,[...walletsToAdd, ...this.queues.get(chain_id)||[]]) 
+        this.queues.set(chain_id, [...walletsToAdd, ...(this.queues.get(chain_id) || [])])
         log.warn(`addWallet: no webhook_id for ${chain_id}; saving to queue`)
-        success[chain_id]=false
-        continue;
+        success[chain_id] = false
+        continue
       }
 
-
       if (!walletsToAdd.length) {
-        success[chain_id]=false
+        success[chain_id] = false
         continue
       }
 
@@ -263,62 +262,62 @@ export default class WebhookManager {
       }
 
       let p = await udpateWebhookAddresses(body)
-      if(!p){
-        success[chain_id]=false
+      if (!p) {
+        success[chain_id] = false
         continue
-      }else{
+      } else {
         log.info(`wallet ${JSON.stringify(wallets)} added`)
-        success[chain_id]=true
+        success[chain_id] = true
       }
     }
     return success
   }
 
   removeWallet = async (wallet: string) => {
-    let success =false
-    for(const chain_id of SUPPORTED_CHAINS){
+    let success = false
+    for (const chain_id of SUPPORTED_CHAINS) {
       if (!this.webhook_ids.has(chain_id)) {
         log.error('removeWallet: No webhook_id found')
         success = false
         continue
       }
 
+      const body = JSON.stringify({
+        webhook_id: this.webhook_ids.get(chain_id),
+        addresses_to_add: [],
+        addresses_to_remove: [wallet],
+      })
 
-        const body = JSON.stringify({
-          webhook_id: this.webhook_ids.get(chain_id),
-          addresses_to_add: [],
-          addresses_to_remove: [wallet],
-        })
+      const sendRemoveWallet = async () => {
+        let p
+        try {
+          p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook-addresses`, { method: 'PATCH', headers, body })
+        } catch (e) {
+          throw new Error('fetch error: Could not reach')
+        }
+        let r
+        try {
+          r = await p.json()
+        } catch (e) {
+          throw new Error('fetch Error: bad JSON')
+        }
+        return true
+      }
 
-    let p
-    try {
-      p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook-addresses`, { method: 'PATCH', headers, body })
-    } catch (e) {
-      log.error(e)
-      success=false
-      continue
+      await retry.execute(async () => await sendRemoveWallet())
+
+      success = true
     }
-    let r = await p.json()
-
-    if (r) {
-      log.info(`wallet ${wallet} removed`)
-      success=true
-      continue
-    }
+    return success
   }
-  return success
-
-  }
-
 
   clean = () => {
-    for(const chain_id of SUPPORTED_CHAINS){
+    for (const chain_id of SUPPORTED_CHAINS) {
       let Wid = this.webhook_ids.get(chain_id)
       if (!!Wid) {
-        WebhookManager.removeHook({ id:Wid})
+        WebhookManager.removeHook({ id: Wid })
       }
     }
-
   }
 
   static removeHook = async (hook: hookIdOnly) => {
