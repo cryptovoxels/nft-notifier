@@ -5,7 +5,7 @@ export function throwUnhandledCase(n: never): never {
   throw new Error('Unhandled case: ' + JSON.stringify(n))
 }
 
-const tokens = ['zoyH14z0ZxPAaMEguARrSmwwgVo4gwvS','whsec_JKtwrANeaul37M3UlPHNqQiE'];
+const tokens = ['zoyH14z0ZxPAaMEguARrSmwwgVo4gwvS','whsec_MjzSgW0GUzuDwTK9wfrw5YN4'];
 
 export function isValidSignature(request:express.Request) {    
 

@@ -13,8 +13,9 @@ export default async function hookHandler(req: express.Request, res: express.Res
   const body = req.body as alchemyNotifyResponse
 
   res.status(200).end() // reply quickly
+  console.log(body)
 
-  if (!body.activity) {
+  if (!body.activity ) {
     // we currently dont care about dropped tx or mined tx;
     return
   }
