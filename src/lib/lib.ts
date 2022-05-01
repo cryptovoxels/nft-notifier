@@ -88,12 +88,15 @@ export type notifyActivity = {
 }
 
 export type alchemyNotifyResponse = {
-  app:string,
-  network:'MAINNET'|'RINKEBY'|'MATIC_MAINNET',
-  webhookType:'ADDRESS_ACTIVITY'|'DROPPED_TRANSACTION'|'MINED_TRANSACTION',
-  timestamp:string,
-  activity:notifyActivity[] |undefined
-  fullTransaction:notifyDroppedTX|notifyMinedTX|undefined
+  webhookId: string,
+  id: string,
+  createdAt: string,
+  type: "ADDRESS_ACTIVITY",
+  event:{
+    network:'MATIC_MAINNET'|'ETH_MAINNET'|'ETH_RINKEBY'|'MATIC_MUMBAI',
+    activity:notifyActivity[] |undefined
+    fullTransaction:notifyDroppedTX|notifyMinedTX|undefined
+  }
 }
 
 type ethLog = {

@@ -120,7 +120,7 @@ export const getCollectibleMetadata = async (chain: number, address: string, tok
 
 const log = createLogger('HOOKManager')
 
-export async function udpateWebhookAddresses(body: { webhook_id: string | number; addresses_to_add: string[]; addresses_to_remove: string[] }) {
+export async function udpateWebhookAddresses(body: { webhook_id: string ; addresses_to_add: string[]; addresses_to_remove: string[] }) {
   const pckge = JSON.stringify(body)
 
   let p

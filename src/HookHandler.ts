@@ -11,17 +11,20 @@ export default async function hookHandler(req: express.Request, res: express.Res
   }
 
   const body = req.body as alchemyNotifyResponse
+  const event =body.event
 
   res.status(200).end() // reply quickly
   console.log(body)
 
-  if (!body.activity ) {
+  if (!event.activity ) {
     // we currently dont care about dropped tx or mined tx;
     return
   }
 
+
+
   // handle the webhook content
-  for (const activity of body.activity) {
+  for (const activity of event.activity) {
     console.log(activity)
 
     if(activity.category=='internal'){
@@ -32,7 +35,7 @@ export default async function hookHandler(req: express.Request, res: express.Res
     let symbol = activity.asset
     let token_id = activity.erc721TokenId
     let metadata = null
-    let chain = body.network == 'MAINNET' ? 1 : body.network == 'MATIC_MAINNET' ? 137 : 8007
+    let chain = event.network == 'ETH_MAINNET' ? 1 : event.network == 'MATIC_MAINNET' ? 137 : 8007
     const from = get42AddressFrom64(activity.fromAddress)
     const to = get42AddressFrom64(activity.toAddress)
     const address = activity.rawContract.address

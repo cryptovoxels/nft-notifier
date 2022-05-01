@@ -13,21 +13,21 @@ const log = createLogger('HOOKManager')
 // Create a retry policy that'll retry whatever function we execute two more times with a randomized exponential backoff if it throws
 const retry = Policy.handleAll().retry().attempts(2).exponential()
 retry.onRetry((reason) => log.debug(`retrying a function call, delaying ${reason.delay.toFixed(1)}ms`))
+const POLYGON_ID = 'MATIC_MAINNET'
+const ETH_ID = 'ETH_MAINNET'
+const SUPPORTED_CHAINS:HookNetwork[] = [ETH_ID, POLYGON_ID]
+type HookNetwork = 'MATIC_MAINNET'|'ETH_MAINNET'
+type hook = { webhook_url: string; app_id: string; version:string; network:HookNetwork,webhook_type:string,is_active: boolean; addresses?: string[] }
 
-type hook = { webhook_url: string; app_id: string; is_active: boolean; addresses?: string[] }
-
-type hookReceived = hook & { id: number | string }
+type hookReceived = hook & { id: string }
 type hookLocal = hook & { id: string }
 
-type hookIdOnly = { id: number | string }
+type hookIdOnly = { id: string }
 
-const POLYGON_ID = 137
-const ETH_ID = 1
-const SUPPORTED_CHAINS = [ETH_ID, POLYGON_ID]
 export default class WebhookManager {
-  // webhook per chainId 1:eth 137:polygon
-  webhook_ids: Map<number, number | string | undefined> = new Map()
-  queues: Map<number, string[]> = new Map()
+  // webhook per chainId 1:ETH_MAINNET 137:MATIC_MAINNET
+  webhook_ids: Map<HookNetwork, string | undefined> = new Map()
+  queues: Map<HookNetwork, string[]> = new Map()
   clientManager?: ClientManager
   constructor(clientManager?: ClientManager) {
     this.clientManager = clientManager
@@ -38,8 +38,7 @@ export default class WebhookManager {
   async init() {
     await retry.execute(async () => await this.getRemoteHooks())
     for (const chain_id of SUPPORTED_CHAINS) {
-      console.log(chain_id)
-      await this.create(chain_id as any)
+      await this.create(chain_id as HookNetwork)
     }
   }
 
@@ -68,8 +67,8 @@ export default class WebhookManager {
     }
     const hooks = r.data.filter((d) => d.webhook_url === `https://notifier.crvox.com/hook`)
 
-    const eth_hooks = r.data.filter((d) => (d.app_id || '').toLowerCase() === eth_app_id?.toLowerCase())
-    const polygon_hooks = r.data.filter((d) => (d.app_id || '').toLowerCase() === polygon_app_id?.toLowerCase() || !d.app_id)
+    const eth_hooks = r.data.filter((d) => d.network=='ETH_MAINNET')
+    const polygon_hooks = r.data.filter((d) => d.network=='MATIC_MAINNET')
 
     if (!eth_hooks.length) {
       if (this.webhook_ids.has(ETH_ID)) {
@@ -94,32 +93,32 @@ export default class WebhookManager {
       let orderedHooks = orderBy(
         eth_hooks,
         [
-          function (o) {
+          function (o:hook) {
             return o.addresses?.length || 0
           },
         ],
         ['desc']
       )
 
-      this.setWebHookId(orderedHooks[0], 1) // eth chain
+      this.setWebHookId(orderedHooks[0]as hookReceived, 'ETH_MAINNET') // eth chain
       orderedHooks.splice(0, 1)
-      hooksToRemove.push(...orderedHooks)
+      hooksToRemove.push(...orderedHooks as hookReceived[])
     }
 
     if (polygon_hooks.length) {
       let orderedHooks = orderBy(
         polygon_hooks,
         [
-          function (o) {
+          function (o:hook) {
             return o.addresses?.length || 0
           },
         ],
         ['desc']
       )
 
-      this.setWebHookId(orderedHooks[0], 137) // eth chain
+      this.setWebHookId(orderedHooks[0]as hookReceived, 'MATIC_MAINNET') // eth chain
       orderedHooks.splice(0, 1)
-      hooksToRemove.push(...orderedHooks)
+      hooksToRemove.push(...orderedHooks as hookReceived[])
     }
 
     // Delete all remote hooks that we want to discard
@@ -129,7 +128,7 @@ export default class WebhookManager {
     return true
   }
 
-  setWebHookId = async (hook: hookReceived, chain: 1 | 137 = 1) => {
+  setWebHookId = async (hook: hookReceived, chain: HookNetwork = 'ETH_MAINNET') => {
     this.webhook_ids.set(chain, hook.id)
 
     log.info(`Current webhook: ${hook.id}`)
@@ -143,13 +142,14 @@ export default class WebhookManager {
     }
   }
 
-  create = async (chain: 1 | 137 = 1) => {
+  create = async (chain:HookNetwork = 'ETH_MAINNET') => {
     if (this.webhook_ids.has(chain)) {
       return
     }
     const body = JSON.stringify({
-      app_id: chain == 1 ? eth_app_id : polygon_app_id,
-      webhook_type: 4, //activity webhook
+      app_id: chain == 'ETH_MAINNET' ? eth_app_id : polygon_app_id,
+      network:chain,
+      webhook_type: 'ADDRESS_ACTIVITY', //activity webhook
       webhook_url: `https://notifier.crvox.com/hook`,
       addresses: this.clientManager?.clients.map((c) => c.wallet) || [],
     })
@@ -169,19 +169,20 @@ export default class WebhookManager {
     let r
     try {
       r = (await p.json()) as { data: hookReceived }
-    } catch {
+    } catch(e) {
+      console.log(e)
       return false
     }
 
     if (r.data && r.data.is_active) {
       log.info(`Webhook ${r.data.id} created`)
-      await this.setWebHookId(r.data)
+      await this.setWebHookId(r.data,chain)
       return true
     }
     return false
   }
 
-  update = async (chain: 1 | 137 = 1) => {
+  update = async (chain: HookNetwork= 'ETH_MAINNET') => {
     if (!this.webhook_ids.has(chain)) {
       throw Error('update: no webhook_id')
     }
@@ -206,7 +207,7 @@ export default class WebhookManager {
     return false
   }
 
-  addWalletsToChain = async (wallets: string | string[], chain_id: 1 | 137) => {
+  addWalletsToChain = async (wallets: string | string[], chain_id: HookNetwork) => {
     let walletsToAdd = wallets
     if (typeof wallets == 'string') {
       walletsToAdd = [wallets]
@@ -238,7 +239,7 @@ export default class WebhookManager {
       walletsToAdd = [wallets]
     }
 
-    let success: Record<number, boolean> = { 1: false, 137: false }
+    let success: Record<HookNetwork, boolean> = { 'ETH_MAINNET': false, 'MATIC_MAINNET': false }
 
     for (const chain_id of SUPPORTED_CHAINS) {
       let Wid = this.webhook_ids.get(chain_id)
@@ -327,7 +328,7 @@ export default class WebhookManager {
 
     let p
     try {
-      p = await fetch(`https://dashboard.alchemyapi.io/api/delete-webhook?webhook_id=${hook.id}`, { method: 'DELETE', headers })
+      p = await fetch(`https://dashboard.alchemyapi.io/api/delete-webhook?=${hook.id}`, { method: 'DELETE', headers })
     } catch (e) {
       log.error(e)
       return false

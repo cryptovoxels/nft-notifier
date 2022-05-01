@@ -5,12 +5,21 @@ import WebhookManager from '../src/WebHookManager'
 test('WebhookManager: no webhook', (t: Test) => {
  let webhookManager = new WebhookManager()
 
- t.false(webhookManager.webhook_ids.has(1))
- t.false(webhookManager.webhook_ids.has(137))
+ t.false(webhookManager.webhook_ids.has('ETH_MAINNET'))
+ t.false(webhookManager.webhook_ids.has('MATIC_MAINNET'))
 })
 
 test('WebhookManager: init', async (t: Test) => {
   const webhookManager = new WebhookManager()
   await webhookManager.init()
-  t.ok(true)
+  t.true(webhookManager.webhook_ids.has('ETH_MAINNET'))
+  t.true(webhookManager.webhook_ids.has('MATIC_MAINNET'))
+ })
+ 
+
+ test('WebhookManager: init', async (t: Test) => {
+  const webhookManager = new WebhookManager()
+  await webhookManager.init()
+  t.true(webhookManager.webhook_ids.has('ETH_MAINNET'))
+  t.true(webhookManager.webhook_ids.has('MATIC_MAINNET'))
  })
