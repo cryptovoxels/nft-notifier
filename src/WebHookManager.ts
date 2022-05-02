@@ -151,7 +151,7 @@ export default class WebhookManager {
       network:chain,
       webhook_type: 'ADDRESS_ACTIVITY', //activity webhook
       webhook_url: `https://notifier.crvox.com/hook`,
-      addresses: this.clientManager?.clients.length?this.clientManager?.clients.map((c) => c.wallet) : ["0xa253D7cd38dC2D0B2E65AD42a7e4bEB3C60A83aD"],
+      addresses: this.clientManager?.clients.length?this.clientManager?.clients.map((c) => c.wallet) : [],
     })
 
     let p
