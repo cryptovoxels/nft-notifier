@@ -36,7 +36,7 @@ export default class WebhookManager {
   }
 
   async init() {
-    await retry.execute(async () => await this.getRemoteHooks())
+    await this.getRemoteHooks()
     for (const chain_id of SUPPORTED_CHAINS) {
       await this.create(chain_id as HookNetwork)
     }
@@ -61,7 +61,6 @@ export default class WebhookManager {
       throw Error('bad JSON')
     }
     console.log(r.data)
-
     if (!r?.data || !r?.data?.length) {
       return null
     }
@@ -244,6 +243,7 @@ export default class WebhookManager {
   }
 
   addWalletsToChain = async (wallets: string | string[], chain_id: HookNetwork) => {
+    console.log(`addWalletsToChain()`)
     let walletsToAdd = wallets
     if (typeof wallets == 'string') {
       walletsToAdd = [wallets]
@@ -303,7 +303,7 @@ export default class WebhookManager {
         success[chain_id] = false
         continue
       } else {
-        log.info(`wallet ${JSON.stringify(wallets)} added`)
+        log.info(`wallet ${JSON.stringify(wallets)} added to ${chain_id}`)
         success[chain_id] = true
       }
     }
@@ -325,20 +325,23 @@ export default class WebhookManager {
         addresses_to_remove: [wallet],
       })
 
-      const sendRemoveWallet = async () => {
-        let p
-        try {
-          p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook-addresses`, { method: 'PATCH', headers, body })
-        } catch (e) {
-          throw new Error('fetch error: Could not reach')
-        }
-        let r
-        try {
-          r = await p.json()
-        } catch (e) {
-          throw new Error('fetch Error: bad JSON')
-        }
-        return true
+      const sendRemoveWallet = () => {
+        return new Promise(async (resolve,reject)=>{
+          let p
+          try {
+            p = await fetch(`https://dashboard.alchemyapi.io/api/update-webhook-addresses`, { method: 'PATCH', headers, body })
+          } catch (e) {
+            return reject(e)
+          }
+          let r
+          try {
+            r = await p.json()
+          } catch (e) {
+            return reject(e)
+          }
+          return resolve(true)
+        })
+
       }
 
       await retry.execute(async () => await sendRemoveWallet())
