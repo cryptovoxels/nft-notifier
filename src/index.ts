@@ -34,6 +34,10 @@ const whitelist = [
   'http://www.cryptovoxels.com',
   'http://cryptovoxels.local:9000',
   'http://localhost:9000',
+  'http://voxels.com',
+  'http://www.voxels.com',
+  'https://www.voxels.com',
+  'https://voxels.com',
   'https://uat.cryptovoxels.com',
 ]
 const corsOptions: cors.CorsOptions = {
