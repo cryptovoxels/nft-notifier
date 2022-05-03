@@ -1,14 +1,16 @@
 import express from 'express'
+import { ClientManager } from '../ClientManager';
 const crypto = require('crypto')
 
 export function throwUnhandledCase(n: never): never {
   throw new Error('Unhandled case: ' + JSON.stringify(n))
 }
 
-const tokens = ['zoyH14z0ZxPAaMEguARrSmwwgVo4gwvS','whsec_MjzSgW0GUzuDwTK9wfrw5YN4'];
+const tokens = ['whsec_1z4JI4FDmpFtoXMCsSUWeVj3','whsec_wCeC8AiMAmVNtfqizO20g5ri'];
 
-export function isValidSignature(request:express.Request) {    
-
+export function isValidSignature(request:express.Request,clientManager:ClientManager) {    
+  const tokens = Array.from(clientManager.webhookManager?.webhooks.values()).map((hook)=>hook?.key)
+  if(!tokens || !tokens.length) return false
   const headers = request.headers;
   const signature = headers['x-alchemy-signature']; // Lowercase for NodeJS
   const body = request.body; 

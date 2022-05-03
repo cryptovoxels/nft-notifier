@@ -66,6 +66,13 @@ app.get(HEALTHCHECK_URL, (req: express.Request, res: express.Response) => {
   res.status(200).end(`up`)
 })
 
+
+// GENERATE WEBSOCKET 
+const wss = new Server({ server: server, maxPayload: 4096, perMessageDeflate: false })
+
+const clientManager = new ClientManager(jwtSecret, loginRateLimiter)
+
+
 app.post('/hook', (req: express.Request, res: express.Response,next:NextFunction) =>{ 
   if(!clientManager){
   res.status(400).send('Not ready')
@@ -75,11 +82,6 @@ app.post('/hook', (req: express.Request, res: express.Response,next:NextFunction
 }
 },(req,res)=>hookHandler(req,res,clientManager))
 
-
-// GENERATE WEBSOCKET 
-const wss = new Server({ server: server, maxPayload: 4096, perMessageDeflate: false })
-
-const clientManager = new ClientManager(jwtSecret, loginRateLimiter)
 
 const inactiveInterval = setInterval(() => {
   clientManager.removeInactiveClients()

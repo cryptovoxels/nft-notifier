@@ -17,16 +17,16 @@ const POLYGON_ID = 'MATIC_MAINNET'
 const ETH_ID = 'ETH_MAINNET'
 const SUPPORTED_CHAINS:HookNetwork[] = [ETH_ID, POLYGON_ID]
 type HookNetwork = 'MATIC_MAINNET'|'ETH_MAINNET'
-type hook = { webhook_url: string; app_id: string; version:string; network:HookNetwork,webhook_type:string,is_active: boolean; addresses?: string[] }
+type hook = { webhook_url: string; app_id: string; version:string; signing_key?:string;network:HookNetwork,webhook_type:string,is_active: boolean; addresses?: string[] }
 
-type hookReceived = hook & { id: string }
+type hookReceived = hook & { id: string;signing_key?:string }
 type hookLocal = hook & { id: string }
 
 type hookIdOnly = { id: string }
 
 export default class WebhookManager {
   // webhook per chainId 1:ETH_MAINNET 137:MATIC_MAINNET
-  webhook_ids: Map<HookNetwork, string | undefined> = new Map()
+  webhooks: Map<HookNetwork, {id:string,key:string} | undefined> = new Map()
   queues: Map<HookNetwork, string[]> = new Map()
   clientManager?: ClientManager
   constructor(clientManager?: ClientManager) {
@@ -67,17 +67,22 @@ export default class WebhookManager {
     }
     const hooks = r.data.filter((d) => d.webhook_url === `https://notifier.crvox.com/hook`)
 
+    for (const hook of hooks){
+      let listAddresses = await WebhookManager.getAddressesOfWebhook(hook.id)
+      hook.addresses = listAddresses
+    }
+
     const eth_hooks = r.data.filter((d) => d.network=='ETH_MAINNET')
     const polygon_hooks = r.data.filter((d) => d.network=='MATIC_MAINNET')
 
     if (!eth_hooks.length) {
-      if (this.webhook_ids.has(ETH_ID)) {
-        this.webhook_ids.delete(ETH_ID)
+      if (this.webhooks.has(ETH_ID)) {
+        this.webhooks.delete(ETH_ID)
       }
     }
     if (!polygon_hooks.length) {
-      if (this.webhook_ids.has(POLYGON_ID)) {
-        this.webhook_ids.delete(POLYGON_ID)
+      if (this.webhooks.has(POLYGON_ID)) {
+        this.webhooks.delete(POLYGON_ID)
       }
     }
 
@@ -100,7 +105,7 @@ export default class WebhookManager {
         ['desc']
       )
 
-      this.setWebHookId(orderedHooks[0]as hookReceived, 'ETH_MAINNET') // eth chain
+      this.setWebHook(orderedHooks[0]as hookReceived, 'ETH_MAINNET') // eth chain
       orderedHooks.splice(0, 1)
       hooksToRemove.push(...orderedHooks as hookReceived[])
     }
@@ -116,7 +121,7 @@ export default class WebhookManager {
         ['desc']
       )
 
-      this.setWebHookId(orderedHooks[0]as hookReceived, 'MATIC_MAINNET') // eth chain
+      this.setWebHook(orderedHooks[0]as hookReceived, 'MATIC_MAINNET') // eth chain
       orderedHooks.splice(0, 1)
       hooksToRemove.push(...orderedHooks as hookReceived[])
     }
@@ -128,8 +133,39 @@ export default class WebhookManager {
     return true
   }
 
-  setWebHookId = async (hook: hookReceived, chain: HookNetwork = 'ETH_MAINNET') => {
-    this.webhook_ids.set(chain, hook.id)
+  static getAddressesOfWebhook = async (webhook_id:string,limit:number = 150)=>{
+    let url  =`https://dashboard.alchemyapi.io/api/webhook-addresses`
+    url +=`?webhook_id=${webhook_id}`
+    url +=`&limit=${limit}`
+
+    let p
+    try {
+      p = await fetch(url, { method: 'GET', headers })
+    } catch (e) {
+      log.error(e)
+      return []
+    }
+
+    if (!p) {
+      return []
+    }
+
+    let r
+    try {
+      r = (await p.json()) as { data: string[] }
+    } catch(e) {
+      return []
+    }
+
+    if (r.data && r.data.length) {
+      return r.data
+    }else{
+      return []
+    }
+  }
+
+  setWebHook = async (hook: hookReceived, chain: HookNetwork = 'ETH_MAINNET') => {
+    this.webhooks.set(chain, {id:hook.id,key:hook.signing_key!})
 
     log.info(`Current webhook: ${hook.id}`)
     // on set webhook; go through the queue of addresses
@@ -143,7 +179,7 @@ export default class WebhookManager {
   }
 
   create = async (chain:HookNetwork = 'ETH_MAINNET') => {
-    if (this.webhook_ids.has(chain)) {
+    if (this.webhooks.has(chain)) {
       return
     }
     const body = JSON.stringify({
@@ -176,18 +212,18 @@ export default class WebhookManager {
 
     if (r.data && r.data.is_active) {
       log.info(`Webhook ${r.data.id} created`)
-      await this.setWebHookId(r.data,chain)
+      await this.setWebHook(r.data,chain)
       return true
     }
     return false
   }
 
   update = async (chain: HookNetwork= 'ETH_MAINNET') => {
-    if (!this.webhook_ids.has(chain)) {
+    if (!this.webhooks.has(chain)) {
       throw Error('update: no webhook_id')
     }
     const body = JSON.stringify({
-      webhook_id: this.webhook_ids.get(chain),
+      webhook_id: this.webhooks.get(chain),
       addresses: this.clientManager?.clients.map((c) => c.wallet) || [],
     })
 
@@ -213,7 +249,7 @@ export default class WebhookManager {
       walletsToAdd = [wallets]
     }
 
-    const Wid = this.webhook_ids.get(chain_id)
+    const Wid = this.webhooks.get(chain_id)?.id
     if (!Wid) {
       this.queues.set(chain_id, [...walletsToAdd, ...(this.queues.get(chain_id) || [])])
       log.warn(`addWallet: no webhook_id for ${chain_id}; saving to queue`)
@@ -242,7 +278,7 @@ export default class WebhookManager {
     let success: Record<HookNetwork, boolean> = { 'ETH_MAINNET': false, 'MATIC_MAINNET': false }
 
     for (const chain_id of SUPPORTED_CHAINS) {
-      let Wid = this.webhook_ids.get(chain_id)
+      let Wid = this.webhooks.get(chain_id)?.id
 
       if (!Wid) {
         this.queues.set(chain_id, [...walletsToAdd, ...(this.queues.get(chain_id) || [])])
@@ -277,14 +313,14 @@ export default class WebhookManager {
   removeWallet = async (wallet: string) => {
     let success = false
     for (const chain_id of SUPPORTED_CHAINS) {
-      if (!this.webhook_ids.has(chain_id)) {
+      if (!this.webhooks.has(chain_id)) {
         log.error('removeWallet: No webhook_id found')
         success = false
         continue
       }
 
       const body = JSON.stringify({
-        webhook_id: this.webhook_ids.get(chain_id),
+        webhook_id: this.webhooks.get(chain_id),
         addresses_to_add: [],
         addresses_to_remove: [wallet],
       })
@@ -314,7 +350,7 @@ export default class WebhookManager {
 
   clean = () => {
     for (const chain_id of SUPPORTED_CHAINS) {
-      let Wid = this.webhook_ids.get(chain_id)
+      let Wid = this.webhooks.get(chain_id)?.id
       if (!!Wid) {
         WebhookManager.removeHook({ id: Wid })
       }
