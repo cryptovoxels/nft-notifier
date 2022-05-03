@@ -6,10 +6,8 @@ export function throwUnhandledCase(n: never): never {
   throw new Error('Unhandled case: ' + JSON.stringify(n))
 }
 
-const tokens = ['whsec_1z4JI4FDmpFtoXMCsSUWeVj3','whsec_wCeC8AiMAmVNtfqizO20g5ri'];
-
 export function isValidSignature(request:express.Request,clientManager:ClientManager) {    
-  const tokens = Array.from(clientManager.webhookManager?.webhooks.values()).map((hook)=>hook?.key)
+  const tokens = Array.from(clientManager.webhookManager?.webhooks.values()).map((hook)=>{return hook?.key})
   if(!tokens || !tokens.length) return false
   const headers = request.headers;
   const signature = headers['x-alchemy-signature']; // Lowercase for NodeJS

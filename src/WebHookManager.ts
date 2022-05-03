@@ -60,7 +60,7 @@ export default class WebhookManager {
     } catch {
       throw Error('bad JSON')
     }
-    console.log(r.data)
+
     if (!r?.data || !r?.data?.length) {
       return null
     }
@@ -222,7 +222,7 @@ export default class WebhookManager {
       throw Error('update: no webhook_id')
     }
     const body = JSON.stringify({
-      webhook_id: this.webhooks.get(chain),
+      webhook_id: this.webhooks.get(chain)?.id,
       addresses: this.clientManager?.clients.map((c) => c.wallet) || [],
     })
 
@@ -243,7 +243,6 @@ export default class WebhookManager {
   }
 
   addWalletsToChain = async (wallets: string | string[], chain_id: HookNetwork) => {
-    console.log(`addWalletsToChain()`)
     let walletsToAdd = wallets
     if (typeof wallets == 'string') {
       walletsToAdd = [wallets]
@@ -320,7 +319,7 @@ export default class WebhookManager {
       }
 
       const body = JSON.stringify({
-        webhook_id: this.webhooks.get(chain_id),
+        webhook_id: this.webhooks.get(chain_id)?.id,
         addresses_to_add: [],
         addresses_to_remove: [wallet],
       })
@@ -333,6 +332,7 @@ export default class WebhookManager {
           } catch (e) {
             return reject(e)
           }
+
           let r
           try {
             r = await p.json()
@@ -367,15 +367,16 @@ export default class WebhookManager {
 
     let p
     try {
-      p = await fetch(`https://dashboard.alchemyapi.io/api/delete-webhook?=${hook.id}`, { method: 'DELETE', headers })
+      p = await fetch(`https://dashboard.alchemyapi.io/api/delete-webhook?webhook_id=${hook.id}`, { method: 'DELETE', headers })
     } catch (e) {
       log.error(e)
       return false
     }
-
     if (!p) {
       return false
     }
+    
+    console.log(await p?.text())
     let r = (await p.json()) as {}
 
     if (r) {

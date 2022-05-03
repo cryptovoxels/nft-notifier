@@ -139,7 +139,6 @@ export async function udpateWebhookAddresses(body: { webhook_id: string ; addres
   }
 
   if (r) {
-    log.info(`wallet ${JSON.stringify(body.addresses_to_add)} added`)
     return true
   }
   return false
